@@ -5,13 +5,9 @@ from kit.databases import create_database_engine
 def main() -> None:
     engine = create_database_engine()
 
-    Base.metadata.create_all(
-        bind=engine
-    )
+    Base.metadata.create_all(bind=engine)
 
-    print(
-        "Financial database tables created."
-    )
+    print("Financial database tables created.")
 
 
 if __name__ == "__main__":

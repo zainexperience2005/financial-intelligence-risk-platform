@@ -1,29 +1,42 @@
+"""Registry contracts use a domain-independent test tool."""
+
 import pytest
+from pydantic import BaseModel
 
-from app.tools import SchemaInspectorTool
-from kit.tools import ToolRegistry
+from kit.tools import BaseTool, ToolRegistry, ToolResult
 
 
-def test_register_and_get_tool() -> None:
+class EchoInput(BaseModel):
+    value: str
+
+
+class EchoTool(BaseTool[EchoInput]):
+    name = "echo"
+    description = "Return the supplied value."
+    input_schema = EchoInput
+
+    def execute(self, input_data: EchoInput) -> ToolResult:
+        return ToolResult(success=True, data=input_data.value)
+
+
+def test_register_and_get_tool():
     registry = ToolRegistry()
-
-    tool = SchemaInspectorTool()
-
+    tool = EchoTool()
     registry.register(tool)
+    assert registry.get("echo") is tool
+    assert registry.names() == ["echo"]
+    listed = registry.list_tools()
+    listed.clear()
+    assert registry.list_tools() == [tool]
 
-    assert registry.get(
-        "schema_inspector"
-    ) is tool
 
-
-def test_duplicate_tool_rejected() -> None:
+def test_duplicate_tool_rejected():
     registry = ToolRegistry()
+    registry.register(EchoTool())
+    with pytest.raises(ValueError, match="already registered"):
+        registry.register(EchoTool())
 
-    registry.register(
-        SchemaInspectorTool()
-    )
 
-    with pytest.raises(ValueError):
-        registry.register(
-            SchemaInspectorTool()
-        )
+def test_unknown_tool_rejected():
+    with pytest.raises(KeyError, match="Unknown tool"):
+        ToolRegistry().get("missing")

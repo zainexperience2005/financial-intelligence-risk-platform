@@ -17,6 +17,4 @@ app.include_router(router)
 
 @app.get("/")
 async def root() -> dict[str, str]:
-    return {
-        "message": f"{settings.app_name} API is running"
-    }
+    return {"message": f"{settings.app_name} API is running"}

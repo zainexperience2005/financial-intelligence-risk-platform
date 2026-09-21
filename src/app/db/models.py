@@ -15,9 +15,7 @@ from app.db.base import Base
 class Customer(Base):
     __tablename__ = "customers"
 
-    id: Mapped[int] = mapped_column(
-        primary_key=True
-    )
+    id: Mapped[int] = mapped_column(primary_key=True)
 
     customer_id: Mapped[str] = mapped_column(
         String(50),
@@ -51,9 +49,7 @@ class Customer(Base):
 class Account(Base):
     __tablename__ = "accounts"
 
-    id: Mapped[int] = mapped_column(
-        primary_key=True
-    )
+    id: Mapped[int] = mapped_column(primary_key=True)
 
     account_id: Mapped[str] = mapped_column(
         String(50),
@@ -97,9 +93,7 @@ class Account(Base):
 class Transaction(Base):
     __tablename__ = "transactions"
 
-    id: Mapped[int] = mapped_column(
-        primary_key=True
-    )
+    id: Mapped[int] = mapped_column(primary_key=True)
 
     transaction_id: Mapped[str] = mapped_column(
         String(50),

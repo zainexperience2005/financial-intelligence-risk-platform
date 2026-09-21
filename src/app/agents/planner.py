@@ -9,9 +9,7 @@ def create_investigation_plan(
 ) -> InvestigationPlan:
     model = create_chat_model()
 
-    structured_model = model.with_structured_output(
-        InvestigationPlan
-    )
+    structured_model = model.with_structured_output(InvestigationPlan)
 
     prompt = create_chat_prompt(
         system_prompt=PLANNER_SYSTEM_PROMPT,

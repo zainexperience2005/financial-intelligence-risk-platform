@@ -2,12 +2,14 @@ from unittest.mock import patch
 
 from app.graphs.nodes import (
     analyze_data,
+    analyze_policy,
     analyze_question,
     analyze_sql,
 )
 from app.schemas import (
     DataAnalysisResult,
     FinancialAnalysis,
+    PolicyAnalysisResult,
     SQLAnalysisResult,
 )
 
@@ -24,11 +26,7 @@ def test_analyze_question_node() -> None:
         "app.graphs.nodes.ask_financial_assistant",
         return_value=fake_analysis,
     ):
-        result = analyze_question(
-            {
-                "question": "What is transaction failure rate?"
-            }
-        )
+        result = analyze_question({"question": "What is transaction failure rate?"})
 
     assert result["analysis"] == fake_analysis
 
@@ -45,11 +43,7 @@ def test_analyze_sql_node() -> None:
         "app.graphs.nodes.run_sql_analyst",
         return_value=fake_sql_result,
     ):
-        result = analyze_sql(
-            {
-                "question": "How many failed transactions are there?"
-            }
-        )
+        result = analyze_sql({"question": "How many failed transactions are there?"})
 
     assert result["sql_analysis"] == fake_sql_result
 
@@ -91,3 +85,26 @@ def test_analyze_data_node_without_sql_analysis() -> None:
     )
 
     assert result == {}
+
+
+def test_analyze_policy_node() -> None:
+    fake_policy_result = PolicyAnalysisResult(
+        summary="Policy requires enhanced review for transactions over PKR 300,000.",
+        grounded=True,
+        retrieved_chunk_count=1,
+        retrieval_relevance="relevant",
+        correction_used=False,
+        retrieval_attempts=1,
+    )
+
+    with patch(
+        "app.graphs.nodes.run_policy_agent",
+        return_value=fake_policy_result,
+    ):
+        result = analyze_policy(
+            {
+                "question": "What policy applies to transfers over 300k PKR?",
+            }
+        )
+
+    assert result["policy_analysis"] == fake_policy_result

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
 from sqlalchemy import select
@@ -9,15 +9,13 @@ from kit.databases import SessionFactory
 
 def main() -> None:
     with SessionFactory() as session:
-        existing = session.scalar(
-            select(Customer).limit(1)
-        )
+        existing = session.scalar(select(Customer).limit(1))
 
         if existing is not None:
             print("Database already contains seed data.")
             return
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         customers = [
             Customer(

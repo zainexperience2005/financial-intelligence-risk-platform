@@ -20,9 +20,7 @@ def ask_financial_assistant(
     """
     model = create_chat_model()
 
-    structured_model = model.with_structured_output(
-        FinancialAnalysis
-    )
+    structured_model = model.with_structured_output(FinancialAnalysis)
 
     prompt = create_chat_prompt(
         system_prompt=FINANCIAL_ASSISTANT_SYSTEM_PROMPT,

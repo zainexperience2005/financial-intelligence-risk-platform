@@ -19,9 +19,7 @@ def summarize_numeric_column(
         }
 
     if column not in dataframe.columns:
-        raise ValueError(
-            f"Column not found: {column}"
-        )
+        raise ValueError(f"Column not found: {column}")
 
     numeric = pd.to_numeric(
         dataframe[column],
@@ -52,15 +50,10 @@ def group_and_sum(
         value_column,
     }
 
-    missing = required - set(
-        dataframe.columns
-    )
+    missing = required - set(dataframe.columns)
 
     if missing:
-        raise ValueError(
-            "Missing columns: "
-            + ", ".join(sorted(missing))
-        )
+        raise ValueError("Missing columns: " + ", ".join(sorted(missing)))
 
     dataframe[value_column] = pd.to_numeric(
         dataframe[value_column],
@@ -68,8 +61,7 @@ def group_and_sum(
     )
 
     result = (
-        dataframe
-        .groupby(
+        dataframe.groupby(
             group_by,
             dropna=False,
         )[value_column]
@@ -81,9 +73,7 @@ def group_and_sum(
         )
     )
 
-    return result.to_dict(
-        orient="records"
-    )
+    return result.to_dict(orient="records")
 
 
 def count_by_category(
@@ -96,9 +86,7 @@ def count_by_category(
         return []
 
     if column not in dataframe.columns:
-        raise ValueError(
-            f"Column not found: {column}"
-        )
+        raise ValueError(f"Column not found: {column}")
 
     result = (
         dataframe[column]
@@ -107,6 +95,4 @@ def count_by_category(
         .reset_index(name="count")
     )
 
-    return result.to_dict(
-        orient="records"
-    )
+    return result.to_dict(orient="records")

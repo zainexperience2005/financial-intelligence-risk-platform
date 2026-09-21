@@ -16,10 +16,10 @@ class Settings(BaseSettings):
     llm_max_tokens: int | None = None
 
     database_url: str = (
-    "postgresql+psycopg://financial_user:"
-    "financial_password@localhost:5432/"
-    "financial_platform"
-)
+        "postgresql+psycopg://financial_user:"
+        "financial_password@localhost:5432/"
+        "financial_platform"
+    )
     read_only_database_url: str = (
         "postgresql+psycopg://financial_reader:"
         "financial_reader_password@localhost:5432/"
@@ -28,6 +28,11 @@ class Settings(BaseSettings):
 
     # OPENAI
     openai_api_key: str | None = None
+    embedding_provider: str = "openai"
+    embedding_model: str = "text-embedding-3-small"
+
+    qdrant_url: str = "http://localhost:6333"
+    qdrant_collection: str = "financial_policies"
 
     model_config = SettingsConfigDict(
         env_file=".env",

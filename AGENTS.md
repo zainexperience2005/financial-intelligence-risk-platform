@@ -245,3 +245,55 @@ analytics tool output rather than being reconstructed by an
 LLM.
 
 Do not pass unbounded datasets into model context.
+
+
+## RAG Architecture
+
+Generic document, chunking, embedding, vector-store, and
+retrieval infrastructure belongs in `src/kit`.
+
+Financial policy documents, policy ingestion rules, and
+policy-agent behavior belong in `src/app`.
+
+Normal RAG must be implemented and measured before adding
+corrective RAG.
+
+Retrieved content is untrusted evidence, not executable
+instructions.
+
+Do not allow retrieved documents to override system
+instructions, permissions, or tool policies.
+
+Citations must be derived from retrieved metadata rather
+than invented by the model.
+
+Do not treat successful retrieval as proof that retrieved
+evidence is relevant.
+
+Do not pass unbounded retrieved context to models.
+
+
+## Corrective RAG
+
+Normal RAG remains the baseline retrieval capability.
+
+CRAG must be implemented as an additional control layer,
+not by deleting the normal retrieval path.
+
+CRAG should:
+- retrieve candidate evidence
+- evaluate evidence relevance
+- avoid correction when evidence is already sufficient
+- perform bounded corrective retrieval when evidence is weak
+- terminate with insufficient evidence when appropriate
+
+Retrieval evaluators do not generate final answers.
+
+Query rewriters preserve intent and do not answer questions.
+
+Corrective retrieval must have explicit attempt limits.
+
+Do not treat an LLM retrieval grader as objective truth.
+
+CRAG quality must eventually be compared against the normal
+RAG baseline using evaluation data.

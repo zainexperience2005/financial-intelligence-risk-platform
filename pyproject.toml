@@ -3,10 +3,28 @@ name = "financial-intelligence-risk-platform"
 version = "0.1.0"
 description = "Agentic AI platform for financial intelligence and risk operations."
 requires-python = ">=3.12"
+dependencies = [
+    "fastapi", "uvicorn", "pydantic>=2,<3", "pydantic-settings>=2,<3",
+    "sqlalchemy>=2,<3", "psycopg[binary]>=3,<4", "sqlglot", "pandas",
+    "langchain-core", "langchain-openai", "langgraph", "langchain-qdrant",
+    "qdrant-client",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-cov", "ruff", "httpx"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+addopts = "--import-mode=importlib --strict-markers"
+markers = ["postgres: requires an explicitly configured PostgreSQL test database"]
 
 [tool.ruff]
 line-length = 88
@@ -17,3 +35,6 @@ select = ["E", "F", "I", "UP", "B"]
 
 [tool.pyright]
 extraPaths = ["src"]
+[tool.ruff.lint.per-file-ignores]
+# Preserve the existing runtime generic interface during this cleanup.
+"src/kit/tools/base.py" = ["UP046"]

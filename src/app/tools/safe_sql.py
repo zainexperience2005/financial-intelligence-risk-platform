@@ -18,20 +18,15 @@ from kit.tools import BaseTool, ToolResult
 class SafeSQLInput(BaseModel):
     query: str = Field(
         min_length=1,
-        description=(
-            "A single read-only PostgreSQL SELECT query."
-        ),
+        description=("A single read-only PostgreSQL SELECT query."),
     )
 
 
-class SafeSQLTool(
-    BaseTool[SafeSQLInput]
-):
+class SafeSQLTool(BaseTool[SafeSQLInput]):
     name = "safe_sql"
 
     description = (
-        "Execute a validated read-only SQL query "
-        "against the financial database."
+        "Execute a validated read-only SQL query against the financial database."
     )
 
     input_schema = SafeSQLInput
@@ -51,9 +46,7 @@ class SafeSQLTool(
         input_data: SafeSQLInput,
     ) -> ToolResult:
         try:
-            statement = validate_read_only_sql(
-                input_data.query
-            )
+            statement = validate_read_only_sql(input_data.query)
 
             safe_query = apply_row_limit(
                 statement,
@@ -61,20 +54,11 @@ class SafeSQLTool(
             )
 
             with self._engine.connect() as connection:
-                connection.execute(
-                    text(
-                        "SET LOCAL statement_timeout = '5s'"
-                    )
-                )
+                connection.execute(text("SET LOCAL statement_timeout = '5s'"))
 
-                result = connection.execute(
-                    text(safe_query)
-                )
+                result = connection.execute(text(safe_query))
 
-                rows: list[dict[str, Any]] = [
-                    dict(row)
-                    for row in result.mappings()
-                ]
+                rows: list[dict[str, Any]] = [dict(row) for row in result.mappings()]
 
             return ToolResult(
                 success=True,

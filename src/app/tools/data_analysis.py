@@ -18,10 +18,7 @@ class DataAnalysisInput(BaseModel):
     ]
 
     rows: list[dict[str, Any]] = Field(
-        description=(
-            "Rows previously retrieved from an "
-            "approved data source."
-        )
+        description=("Rows previously retrieved from an approved data source.")
     )
 
     column: str | None = None
@@ -31,14 +28,11 @@ class DataAnalysisInput(BaseModel):
     value_column: str | None = None
 
 
-class DataAnalysisTool(
-    BaseTool[DataAnalysisInput]
-):
+class DataAnalysisTool(BaseTool[DataAnalysisInput]):
     name = "data_analysis"
 
     description = (
-        "Perform deterministic analysis on rows "
-        "retrieved from an approved data source."
+        "Perform deterministic analysis on rows retrieved from an approved data source."
     )
 
     input_schema = DataAnalysisInput
@@ -50,9 +44,7 @@ class DataAnalysisTool(
         try:
             if input_data.operation == "summarize":
                 if input_data.column is None:
-                    raise ValueError(
-                        "column is required for summarize."
-                    )
+                    raise ValueError("column is required for summarize.")
 
                 data = summarize_numeric_column(
                     input_data.rows,
@@ -60,13 +52,9 @@ class DataAnalysisTool(
                 )
 
             elif input_data.operation == "group_sum":
-                if (
-                    input_data.group_by is None
-                    or input_data.value_column is None
-                ):
+                if input_data.group_by is None or input_data.value_column is None:
                     raise ValueError(
-                        "group_by and value_column are "
-                        "required for group_sum."
+                        "group_by and value_column are required for group_sum."
                     )
 
                 data = group_and_sum(
@@ -77,10 +65,7 @@ class DataAnalysisTool(
 
             else:
                 if input_data.column is None:
-                    raise ValueError(
-                        "column is required for "
-                        "count_by_category."
-                    )
+                    raise ValueError("column is required for count_by_category.")
 
                 data = count_by_category(
                     input_data.rows,

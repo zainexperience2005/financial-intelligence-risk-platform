@@ -9,8 +9,11 @@ from kit.config import get_settings
 router = APIRouter()
 
 financial_graph = build_financial_graph()
+
+
 class ChatRequest(BaseModel):
     """Request model for chat messages."""
+
     message: str = Field(min_length=1)
 
 

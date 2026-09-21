@@ -10,9 +10,7 @@ class ToolRegistry:
         tool: BaseTool,
     ) -> None:
         if tool.name in self._tools:
-            raise ValueError(
-                f"Tool already registered: {tool.name}"
-            )
+            raise ValueError(f"Tool already registered: {tool.name}")
 
         self._tools[tool.name] = tool
 
@@ -23,9 +21,7 @@ class ToolRegistry:
         try:
             return self._tools[name]
         except KeyError as exc:
-            raise KeyError(
-                f"Unknown tool: {name}"
-            ) from exc
+            raise KeyError(f"Unknown tool: {name}") from exc
 
     def list_tools(
         self,

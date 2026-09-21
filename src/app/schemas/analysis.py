@@ -6,13 +6,9 @@ from app.schemas.plan import InvestigationPlan
 
 
 class FinancialAnalysis(BaseModel):
-    summary: str = Field(
-        description="Concise answer to the user's question."
-    )
+    summary: str = Field(description="Concise answer to the user's question.")
 
-    reasoning: str = Field(
-        description="Brief explanation supporting the answer."
-    )
+    reasoning: str = Field(description="Brief explanation supporting the answer.")
 
     confidence: Literal["low", "medium", "high"] = Field(
         description="Confidence based only on available evidence."

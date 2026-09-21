@@ -30,6 +30,4 @@ def create_chat_model(
             api_key=config.api_key,
         )
 
-    raise ValueError(
-        f"Unsupported LLM provider: {config.provider}"
-    )
+    raise ValueError(f"Unsupported LLM provider: {config.provider}")

@@ -4,7 +4,6 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from kit.databases.engine import create_database_engine
 
-
 engine = create_database_engine()
 
 

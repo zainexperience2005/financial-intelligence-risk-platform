@@ -8,21 +8,14 @@ from kit.tools import BaseTool, ToolResult
 class SchemaInspectorInput(BaseModel):
     table_name: str | None = Field(
         default=None,
-        description=(
-            "Optional table name. If omitted, inspect "
-            "all available tables."
-        ),
+        description=("Optional table name. If omitted, inspect all available tables."),
     )
 
 
-class SchemaInspectorTool(
-    BaseTool[SchemaInspectorInput]
-):
+class SchemaInspectorTool(BaseTool[SchemaInspectorInput]):
     name = "schema_inspector"
 
-    description = (
-        "Inspect the available financial database schema."
-    )
+    description = "Inspect the available financial database schema."
 
     input_schema = SchemaInspectorInput
 
@@ -41,10 +34,7 @@ class SchemaInspectorTool(
             if input_data.table_name not in available_tables:
                 return ToolResult(
                     success=False,
-                    error=(
-                        "Unknown table: "
-                        f"{input_data.table_name}"
-                    ),
+                    error=(f"Unknown table: {input_data.table_name}"),
                 )
 
             tables = [input_data.table_name]
@@ -55,9 +45,7 @@ class SchemaInspectorTool(
         schema: dict[str, list[dict[str, str]]] = {}
 
         for table_name in tables:
-            columns = inspector.get_columns(
-                table_name
-            )
+            columns = inspector.get_columns(table_name)
 
             schema[table_name] = [
                 {

@@ -1,5 +1,6 @@
 from app.graphs.router import (
     route_after_analysis,
+    route_after_analytics,
     route_after_planning,
     route_after_sql,
 )
@@ -92,10 +93,27 @@ def test_routes_to_analytics_when_plan_requires_analytics() -> None:
     assert result == "analytics"
 
 
-def test_routes_to_analyze_when_plan_does_not_require_analytics() -> None:
+def test_routes_to_policy_when_sql_done_and_policy_required_without_analytics() -> None:
     state = {
         "plan": InvestigationPlan(
-            objective="Inspect raw rows.",
+            objective="Check policy after retrieving transactions.",
+            requires_sql=True,
+            requires_analytics=False,
+            requires_policy=True,
+            requires_risk=False,
+            requires_action=False,
+        ),
+    }
+
+    result = route_after_sql(state)
+
+    assert result == "policy"
+
+
+def test_routes_to_analyze_when_neither_analytics_nor_policy_needed() -> None:
+    state = {
+        "plan": InvestigationPlan(
+            objective="Inspect raw rows without further processing.",
             requires_sql=True,
             requires_analytics=False,
             requires_policy=False,
@@ -105,5 +123,39 @@ def test_routes_to_analyze_when_plan_does_not_require_analytics() -> None:
     }
 
     result = route_after_sql(state)
+
+    assert result == "analyze"
+
+
+def test_routes_to_policy_after_analytics_when_policy_required() -> None:
+    state = {
+        "plan": InvestigationPlan(
+            objective="Evaluate aggregated data against risk policies.",
+            requires_sql=True,
+            requires_analytics=True,
+            requires_policy=True,
+            requires_risk=False,
+            requires_action=False,
+        ),
+    }
+
+    result = route_after_analytics(state)
+
+    assert result == "policy"
+
+
+def test_routes_to_analyze_after_analytics_when_policy_not_required() -> None:
+    state = {
+        "plan": InvestigationPlan(
+            objective="Complete analysis after calculations.",
+            requires_sql=True,
+            requires_analytics=True,
+            requires_policy=False,
+            requires_risk=False,
+            requires_action=False,
+        ),
+    }
+
+    result = route_after_analytics(state)
 
     assert result == "analyze"

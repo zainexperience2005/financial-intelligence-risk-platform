@@ -19,11 +19,7 @@ def test_plan_investigation_node() -> None:
         return_value=fake_plan,
     ):
         result = plan_investigation(
-            {
-                "question": (
-                    "Why did transaction failures increase?"
-                )
-            }
+            {"question": ("Why did transaction failures increase?")}
         )
 
     assert result["plan"] == fake_plan

@@ -1,0 +1,20 @@
+[
+    {
+        "question": "What policy applies to high-value transfers?",
+        "expected_sources": [
+            "transaction_monitoring.md"
+        ]
+    },
+    {
+        "question": "What should happen when a transaction fails because of risk review?",
+        "expected_sources": [
+            "failed_transactions.md"
+        ]
+    },
+    {
+        "question": "Can an AI agent freeze an account without human approval?",
+        "expected_sources": [
+            "account_restrictions.md"
+        ]
+    }
+]

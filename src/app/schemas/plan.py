@@ -3,17 +3,11 @@ from pydantic import BaseModel, Field
 
 class InvestigationPlan(BaseModel):
     objective: str = Field(
-        description=(
-            "A concise description of what the investigation "
-            "must determine."
-        )
+        description=("A concise description of what the investigation must determine.")
     )
 
     requires_sql: bool = Field(
-        description=(
-            "Whether internal structured financial data "
-            "must be queried."
-        )
+        description=("Whether internal structured financial data must be queried.")
     )
 
     requires_analytics: bool = Field(
@@ -31,10 +25,7 @@ class InvestigationPlan(BaseModel):
     )
 
     requires_risk: bool = Field(
-        description=(
-            "Whether transaction or customer risk assessment "
-            "is required."
-        )
+        description=("Whether transaction or customer risk assessment is required.")
     )
 
     requires_action: bool = Field(

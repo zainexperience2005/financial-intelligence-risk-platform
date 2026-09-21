@@ -16,9 +16,7 @@ def main() -> None:
         "and destination country."
     )
 
-    result = run_sql_analyst(
-        question
-    )
+    result = run_sql_analyst(question)
 
     print(result.model_dump_json(indent=2))
 

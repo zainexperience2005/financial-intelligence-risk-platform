@@ -1,8 +1,11 @@
+from app.agents.data_analyst import run_data_analyst
 from app.agents.financial_assistant import ask_financial_assistant
 from app.agents.planner import create_investigation_plan
+from app.agents.policy_agent import (
+    run_policy_agent,
+)
 from app.agents.sql_analyst import run_sql_analyst
 from app.graphs.state import FinancialState
-from app.agents.data_analyst import run_data_analyst
 
 
 def analyze_question(
@@ -20,9 +23,7 @@ def analyze_question(
 def analyze_sql(
     state: FinancialState,
 ) -> dict:
-    result = run_sql_analyst(
-        state["question"]
-    )
+    result = run_sql_analyst(state["question"])
 
     return {
         "sql_analysis": result,
@@ -53,12 +54,11 @@ def plan_investigation(
         "plan": plan,
     }
 
+
 def analyze_data(
     state: FinancialState,
 ) -> dict:
-    sql_analysis = state.get(
-        "sql_analysis"
-    )
+    sql_analysis = state.get("sql_analysis")
 
     if sql_analysis is None:
         return {}
@@ -72,3 +72,12 @@ def analyze_data(
         "data_analysis": result,
     }
 
+
+def analyze_policy(
+    state: FinancialState,
+) -> dict:
+    result = run_policy_agent(state["question"])
+
+    return {
+        "policy_analysis": result,
+    }

@@ -7,13 +7,9 @@ def to_langchain_tool(
     tool: BaseTool,
 ) -> StructuredTool:
     def execute_tool(**kwargs):
-        input_data = tool.input_schema(
-            **kwargs
-        )
+        input_data = tool.input_schema(**kwargs)
 
-        result = tool.execute(
-            input_data
-        )
+        result = tool.execute(input_data)
 
         return result.model_dump()
 

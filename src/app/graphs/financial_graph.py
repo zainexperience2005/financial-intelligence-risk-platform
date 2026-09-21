@@ -1,7 +1,23 @@
+"""Financial Intelligence & Risk Platform Multi-Agent StateGraph.
+
+Orchestration Workflow:
+START -> planner
+           ├── requires_sql -> sql_analyst
+           │     ├── requires_analytics -> data_analyst
+           │     │     ├── requires_policy -> policy_agent -> analyze
+           │     │     └── no policy -> analyze
+           │     ├── requires_policy -> policy_agent -> analyze
+           │     └── no analytics/policy -> analyze
+           └── direct inquiry -> analyze
+                                  ├── requires_data -> data_required -> END
+                                  └── complete -> END
+"""
+
 from langgraph.graph import END, START, StateGraph
 
 from app.graphs.nodes import (
     analyze_data,
+    analyze_policy,
     analyze_question,
     analyze_sql,
     handle_data_requirement,
@@ -9,6 +25,7 @@ from app.graphs.nodes import (
 )
 from app.graphs.router import (
     route_after_analysis,
+    route_after_analytics,
     route_after_planning,
     route_after_sql,
 )
@@ -16,6 +33,7 @@ from app.graphs.state import FinancialState
 
 
 def build_financial_graph():
+    """Builds and compiles the multi-agent investigation graph."""
     builder = StateGraph(FinancialState)  # type: ignore[arg-type]
 
     builder.add_node(
@@ -31,6 +49,11 @@ def build_financial_graph():
     builder.add_node(
         "data_analyst",
         analyze_data,
+    )
+
+    builder.add_node(
+        "policy_agent",
+        analyze_policy,
     )
 
     builder.add_node(
@@ -62,12 +85,22 @@ def build_financial_graph():
         route_after_sql,
         {
             "analytics": "data_analyst",
+            "policy": "policy_agent",
+            "analyze": "analyze",
+        },
+    )
+
+    builder.add_conditional_edges(
+        "data_analyst",
+        route_after_analytics,
+        {
+            "policy": "policy_agent",
             "analyze": "analyze",
         },
     )
 
     builder.add_edge(
-        "data_analyst",
+        "policy_agent",
         "analyze",
     )
 

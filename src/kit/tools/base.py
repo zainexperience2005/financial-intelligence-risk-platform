@@ -5,7 +5,6 @@ from pydantic import BaseModel
 
 from kit.tools.result import ToolResult
 
-
 InputT = TypeVar(
     "InputT",
     bound=BaseModel,
