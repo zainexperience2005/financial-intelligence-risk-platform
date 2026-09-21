@@ -1,20 +1,36 @@
 from langgraph.graph import END, START, StateGraph
 
 from app.graphs.nodes import (
+    analyze_data,
     analyze_question,
+    analyze_sql,
     handle_data_requirement,
     plan_investigation,
 )
-from app.graphs.router import route_after_analysis
+from app.graphs.router import (
+    route_after_analysis,
+    route_after_planning,
+    route_after_sql,
+)
 from app.graphs.state import FinancialState
 
 
 def build_financial_graph():
-    builder = StateGraph(FinancialState)
+    builder = StateGraph(FinancialState)  # type: ignore[arg-type]
 
     builder.add_node(
         "planner",
         plan_investigation,
+    )
+
+    builder.add_node(
+        "sql_analyst",
+        analyze_sql,
+    )
+
+    builder.add_node(
+        "data_analyst",
+        analyze_data,
     )
 
     builder.add_node(
@@ -32,8 +48,26 @@ def build_financial_graph():
         "planner",
     )
 
-    builder.add_edge(
+    builder.add_conditional_edges(
         "planner",
+        route_after_planning,
+        {
+            "sql": "sql_analyst",
+            "analyze": "analyze",
+        },
+    )
+
+    builder.add_conditional_edges(
+        "sql_analyst",
+        route_after_sql,
+        {
+            "analytics": "data_analyst",
+            "analyze": "analyze",
+        },
+    )
+
+    builder.add_edge(
+        "data_analyst",
         "analyze",
     )
 

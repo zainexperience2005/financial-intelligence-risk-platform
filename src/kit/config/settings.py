@@ -20,6 +20,11 @@ class Settings(BaseSettings):
     "financial_password@localhost:5432/"
     "financial_platform"
 )
+    read_only_database_url: str = (
+        "postgresql+psycopg://financial_reader:"
+        "financial_reader_password@localhost:5432/"
+        "financial_platform"
+    )
 
     # OPENAI
     openai_api_key: str | None = None

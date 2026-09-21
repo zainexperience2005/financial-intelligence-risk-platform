@@ -132,22 +132,116 @@ Before creating a new tool:
 Do not use an LLM for deterministic work that normal Python
 or a dedicated tool can perform reliably.
 
-from sqlalchemy import text
 
-from kit.databases import create_database_engine
+## Tool-Calling Agents
+
+Models may propose tool calls, but application code executes tools.
+
+Never treat tool descriptions or prompts as security boundaries.
+
+Tool calls must still pass through the tool's deterministic
+validation and permission controls.
+
+Framework-specific tool interfaces should adapt the kit's
+tool contracts rather than forcing reusable kit tools to
+depend directly on one agent framework.
+
+Agent loops must have explicit termination limits.
+
+Authoritative tool evidence such as SQL rows, query text,
+counts, IDs, and status values should be captured directly
+from tool results rather than reconstructed by an LLM.
 
 
-engine = create_database_engine()
 
 
-def database_is_healthy() -> bool:
-    try:
-        with engine.connect() as connection:
-            connection.execute(
-                text("SELECT 1")
-            )
+## Financial Data Rules
 
-        return True
+Financial domain models belong in `src/app/db`.
 
-    except Exception:
-        return False
+Use fixed-precision database types and Python `Decimal`
+for monetary values.
+
+Synthetic development data should be reproducible whenever
+practical.
+
+Do not expose database credentials to models.
+
+LLM-driven database access must go through controlled tools.
+
+Schema inspection is read-only.
+
+Do not allow arbitrary model-generated SQL execution without
+validation and read-only enforcement.
+
+
+## SQL Safety
+
+LLM-generated SQL must never be executed directly.
+
+All model-generated SQL must pass through the approved
+read-only SQL tool.
+
+SQL execution must use:
+- AST-based validation
+- a single-statement policy
+- read-only query policy
+- result row limits
+- query timeout
+- a database account with SELECT-only privileges
+
+The model must never receive database credentials.
+
+Do not bypass SafeSQLTool for agent-generated queries.
+
+Application-owned mutation workflows must use separate,
+explicitly permissioned tools and approval gates.
+
+
+## Agent Loop Rules
+
+Agent loops must have explicit termination boundaries.
+
+Track loop behavior using deterministic runtime state rather
+than asking the model to report its own execution history.
+
+At minimum, tool-using loops should consider:
+- maximum iterations
+- tool-call budgets
+- repeated-action detection
+- failure counts
+- termination reasons
+
+Tool failures may be returned to the model as controlled
+observations when recovery is useful.
+
+Do not expose unnecessary raw infrastructure exceptions to
+the model.
+
+Prompts encourage behavior. Runtime code enforces limits.
+
+Do not generalize application-specific loop logic into
+`kit/loops` until a reusable pattern has emerged across
+multiple agent workflows.
+
+## Analytics Architecture
+
+Database retrieval and data analysis are separate capabilities.
+
+The SQL Analyst retrieves authoritative structured data.
+
+The Data Analyst analyzes only explicitly supplied data.
+
+Prefer deterministic Python/Pandas calculations over asking
+an LLM to calculate numeric results.
+
+Do not execute arbitrary model-generated Python.
+
+Analytics tools must expose a constrained, typed operation
+surface.
+
+Authoritative calculated values should come directly from
+analytics tool output rather than being reconstructed by an
+LLM.
+
+Do not pass unbounded datasets into model context.

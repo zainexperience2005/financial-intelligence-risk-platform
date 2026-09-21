@@ -1,10 +1,10 @@
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
+
+from app.graphs import build_financial_graph
 from app.schemas import InvestigationResponse
 from app.services import database_is_healthy
 from kit.config import get_settings
-from app.graphs import build_financial_graph
-
 
 router = APIRouter()
 
@@ -30,7 +30,7 @@ async def health_check() -> dict[str, str]:
     "/chat",
     response_model=InvestigationResponse,
 )
-async def chat(
+def chat(
     request: ChatRequest,
 ) -> InvestigationResponse:
     result = financial_graph.invoke(

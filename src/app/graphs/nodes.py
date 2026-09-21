@@ -1,6 +1,9 @@
 from app.agents.financial_assistant import ask_financial_assistant
-from app.graphs.state import FinancialState
 from app.agents.planner import create_investigation_plan
+from app.agents.sql_analyst import run_sql_analyst
+from app.graphs.state import FinancialState
+from app.agents.data_analyst import run_data_analyst
+
 
 def analyze_question(
     state: FinancialState,
@@ -11,6 +14,18 @@ def analyze_question(
 
     return {
         "analysis": analysis,
+    }
+
+
+def analyze_sql(
+    state: FinancialState,
+) -> dict:
+    result = run_sql_analyst(
+        state["question"]
+    )
+
+    return {
+        "sql_analysis": result,
     }
 
 
@@ -26,6 +41,7 @@ def handle_data_requirement(
         ),
     }
 
+
 def plan_investigation(
     state: FinancialState,
 ) -> dict:
@@ -36,3 +52,23 @@ def plan_investigation(
     return {
         "plan": plan,
     }
+
+def analyze_data(
+    state: FinancialState,
+) -> dict:
+    sql_analysis = state.get(
+        "sql_analysis"
+    )
+
+    if sql_analysis is None:
+        return {}
+
+    result = run_data_analyst(
+        question=state["question"],
+        rows=sql_analysis.rows,
+    )
+
+    return {
+        "data_analysis": result,
+    }
+
