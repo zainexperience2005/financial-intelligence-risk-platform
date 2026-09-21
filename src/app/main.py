@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from app.api.actions import router as actions_router
 from app.api.approvals import router as approvals_router
+from app.api.memory import router as memory_router
 from app.api.routes import router
 from app.graphs.financial_graph import build_financial_graph
 from kit.config import get_settings
@@ -36,6 +37,7 @@ app = FastAPI(
 app.include_router(router)
 app.include_router(approvals_router)
 app.include_router(actions_router)
+app.include_router(memory_router)
 
 
 @app.get("/")

@@ -169,6 +169,25 @@ Turn 2: "Why was it considered high risk?" (same thread_id)
 
 ---
 
+## 💾 Durable Long-Term Memory with Qdrant
+
+While short-term memory tracks conversation context within a single investigation thread, **long-term memory selectively persists durable findings and context across investigations** in a dedicated Qdrant collection (`financial_memory`):
+
+| Capability | Storage System | Semantics & Purpose | Lifecycle |
+|---|---|---|---|
+| **Short-Term Memory** | PostgreSQL Checkpointer | Turn-to-turn thread dialogue (`thread_id`) | Active investigation thread |
+| **Long-Term Memory** | Qdrant (`financial_memory`) | Selective historical findings, summaries | Explicit retention (`retention_days`) & deletion |
+| **Policy RAG / CRAG** | Qdrant (`financial_policies`) | Authoritative, approved compliance rules | Version-controlled, static documents |
+| **Transactional Facts** | PostgreSQL (Relational) | Authoritative ground truth (accounts, balances) | Audited, ACID transactions |
+
+### Long-Term Memory Principles
+- **Selective Persistence**: We do not blindly dump entire conversations into vector storage. Only concise, attributable investigation summaries are stored.
+- **Explicit Expiration**: Every memory record supports an optional `expires_at` timestamp. Queries automatically filter out expired records.
+- **Auditable & Deletable**: Every record has a stable `memory_id` UUID, enabling immediate deletion (`DELETE /memory/{id}`).
+- **Privacy & Security Boundaries**: Long-term memory never stores credentials, approval tokens, connection strings, or unnecessary PII.
+
+---
+
 ## 📚 Corrective RAG (CRAG) Architecture
 
 Standard vector retrieval can return chunks that match keywords but fail to answer the financial policy question. CRAG adds an evaluation and correction loop:
@@ -340,6 +359,9 @@ python scripts/seed_database.py
 
 # 4. Ingest and index compliance policies into Qdrant
 python scripts/index_policies.py
+
+# 5. Initialize dedicated Qdrant long-term memory collection
+python scripts/setup_memory_store.py
 ```
 
 ---
@@ -417,6 +439,24 @@ curl -X POST http://localhost:8000/actions/execute \
     "approval_id": "<approval_id>",
     "executed_by": "analyst@example.com"
   }'
+```
+
+### 5. Durable Long-Term Memory (`/memory`)
+Store, search, and delete selective investigation findings:
+
+```bash
+# Remember finding with 30-day retention
+curl -X POST http://localhost:8000/memory \
+  -H "Content-Type: application/json" \
+  -d '{"content": "Investigation TX-1006 identified high risk international transfer.", "retention_days": 30}'
+
+# Recall relevant historical findings
+curl -X POST http://localhost:8000/memory/recall \
+  -H "Content-Type: application/json" \
+  -d '{"query": "international transfer risk", "k": 5}'
+
+# Delete memory by ID
+curl -X DELETE http://localhost:8000/memory/{memory_id}
 ```
 
 ---

@@ -37,6 +37,7 @@ class Settings(BaseSettings):
 
     qdrant_url: str = "http://localhost:6333"
     qdrant_collection: str = "financial_policies"
+    memory_qdrant_collection: str = "financial_memory"
 
     model_config = SettingsConfigDict(
         env_file=".env",
