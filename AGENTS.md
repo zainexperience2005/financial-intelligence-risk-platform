@@ -47,3 +47,23 @@ by application logic.
 
 Do not parse free-form LLM text when a typed schema can represent
 the required result.
+
+
+## LangGraph Rules
+
+Financial/domain workflows belong in `src/app/graphs`.
+
+Generic reusable LangGraph infrastructure belongs in
+`src/kit/graphs`.
+
+Do not put business-specific graph nodes in the kit.
+
+Nodes should:
+- accept explicit state
+- return explicit state updates
+- remain small and focused
+- avoid hidden global state
+- use typed state where practical
+
+Prefer deterministic Python nodes when LLM reasoning is
+not required.

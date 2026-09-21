@@ -3,10 +3,11 @@ from pydantic import BaseModel, Field
 from app.schemas import FinancialAnalysis
 from app.agents.financial_assistant import ask_financial_assistant
 from kit.config import get_settings
+from app.graphs import build_financial_graph
 
 router = APIRouter()
 
-
+financial_graph = build_financial_graph()
 class ChatRequest(BaseModel):
     """Request model for chat messages."""
     message: str = Field(min_length=1)
@@ -30,4 +31,10 @@ async def health_check() -> dict[str, str]:
 async def chat(
     request: ChatRequest,
 ) -> FinancialAnalysis:
-    return ask_financial_assistant(request.message)
+    result = financial_graph.invoke(
+        {
+            "question": request.message,
+        }
+    )
+
+    return result["analysis"]
