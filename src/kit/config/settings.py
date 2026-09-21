@@ -15,6 +15,12 @@ class Settings(BaseSettings):
     llm_temperature: float = 0.0
     llm_max_tokens: int | None = None
 
+    database_url: str = (
+    "postgresql+psycopg://financial_user:"
+    "financial_password@localhost:5432/"
+    "financial_platform"
+)
+
     # OPENAI
     openai_api_key: str | None = None
 

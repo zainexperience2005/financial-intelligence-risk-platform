@@ -1,8 +1,10 @@
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
-from app.schemas import FinancialAnalysis, InvestigationResponse
+from app.schemas import InvestigationResponse
+from app.services import database_is_healthy
 from kit.config import get_settings
 from app.graphs import build_financial_graph
+
 
 router = APIRouter()
 
@@ -16,9 +18,9 @@ class ChatRequest(BaseModel):
 async def health_check() -> dict[str, str]:
     """Performs a health check of the API."""
     settings = get_settings()
-
+    db_healthy = database_is_healthy()
     return {
-        "status": "healthy",
+        "status": "healthy" if db_healthy else "unhealthy",
         "service": settings.app_name,
         "version": settings.app_version,
     }

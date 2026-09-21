@@ -1,0 +1,25 @@
+services:
+  postgres:
+    image: postgres:16
+
+    container_name: financial_postgres
+
+    environment:
+      POSTGRES_DB: financial_platform
+      POSTGRES_USER: financial_user
+      POSTGRES_PASSWORD: financial_password
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - financial_postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U financial_user -d financial_platform" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  financial_postgres_data:
