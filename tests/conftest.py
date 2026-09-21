@@ -10,6 +10,7 @@ from kit.config import get_settings
 os.environ.update(
     DATABASE_URL="sqlite://",
     READ_ONLY_DATABASE_URL="sqlite://",
+    CHECKPOINT_DATABASE_URL="sqlite://",
     OPENAI_API_KEY="test-key-not-a-secret",
     LLM_PROVIDER="openai",
     LLM_MODEL="test-model",

@@ -37,4 +37,13 @@ Important rules:
 - Do not invent policy contents.
 - Do not claim tools were executed.
 - Select only capabilities actually needed.
+Use recent conversation only to resolve context such as
+references to previously discussed transactions or findings.
+
+The current user request has priority.
+
+Do not treat previous assistant statements as verified
+financial evidence.
+
+Database facts must still come from controlled tools.
 """.strip()

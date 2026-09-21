@@ -395,3 +395,58 @@ Services coordinate authorization and transactions.
 
 LLMs may recommend actions but never receive unrestricted
 database write capabilities.
+
+## Short-Term Memory
+
+LangGraph checkpointing provides persistent investigation
+thread state.
+
+A thread_id identifies an investigation/conversation, not a
+user identity.
+
+Conversation messages may persist across turns.
+
+Specialist evidence such as SQL results, analytics, policy
+retrieval, risk results, and reports is turn-scoped and must
+not be silently reused as fresh evidence on later turns.
+
+Conversation memory provides context, not authoritative
+financial facts.
+
+Financial facts must still be verified through controlled
+data and policy tools when required.
+
+Recent conversation context must be bounded before being sent
+to an LLM.
+
+Separate investigation threads must not share conversation
+state.
+
+
+## Long-Term Memory
+
+Long-term memory and RAG are separate capabilities.
+
+Policy documents belong in policy knowledge collections.
+Memories belong in dedicated memory collections.
+
+Do not automatically persist entire conversations.
+
+Long-term memory should be selective, concise, attributable,
+and subject to retention and deletion.
+
+Memory is context, not authoritative current financial data.
+
+Current transaction/account facts must be verified through
+controlled database tools.
+
+Policy claims must be verified through policy retrieval.
+
+Memory records must have stable IDs so they can be deleted.
+
+Sensitive secrets, credentials, approval tokens, and
+unnecessary PII must not be stored in long-term memory.
+
+Applications decide what information is eligible for durable
+memory; models do not receive unrestricted persistence
+capabilities by default.

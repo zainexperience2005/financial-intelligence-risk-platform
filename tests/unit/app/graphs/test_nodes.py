@@ -108,3 +108,49 @@ def test_analyze_policy_node() -> None:
         )
 
     assert result["policy_analysis"] == fake_policy_result
+
+
+def test_prepare_turn_resets_specialist_state() -> None:
+    from app.graphs.nodes import prepare_turn
+
+    stale_state = {
+        "question": "Follow-up inquiry",
+        "plan": "old_plan",
+        "sql_analysis": "old_sql",
+        "data_analysis": "old_data",
+        "policy_analysis": "old_policy",
+        "risk_analysis": "old_risk",
+        "report": "old_report",
+    }
+
+    cleaned = prepare_turn(stale_state)  # type: ignore[arg-type]
+
+    assert cleaned["plan"] is None
+    assert cleaned["sql_analysis"] is None
+    assert cleaned["data_analysis"] is None
+    assert cleaned["policy_analysis"] is None
+    assert cleaned["risk_analysis"] is None
+    assert cleaned["report"] is None
+
+
+def test_create_report_node_appends_aimessage() -> None:
+    from app.graphs.nodes import create_report
+    from app.schemas.report import InvestigationReport
+
+    fake_report = InvestigationReport(
+        executive_summary="Executive summary test.",
+        findings=["Finding 1"],
+        risk_summary="Risk is low.",
+        recommendation="Continue standard monitoring.",
+        evidence_sufficient=True,
+    )
+
+    with patch(
+        "app.graphs.nodes.create_investigation_report",
+        return_value=fake_report,
+    ):
+        result = create_report({"question": "Investigate ACC-1001"})
+
+    assert result["report"] == fake_report
+    assert len(result["messages"]) == 1
+    assert result["messages"][0].content == "Executive summary test."

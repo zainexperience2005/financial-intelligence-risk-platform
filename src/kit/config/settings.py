@@ -25,7 +25,11 @@ class Settings(BaseSettings):
         "financial_reader_password@localhost:5432/"
         "financial_platform"
     )
-
+    checkpoint_database_url: str = (
+        "postgresql://financial_user:"
+        "financial_password@localhost:5432/"
+        "financial_platform"
+    )
     # OPENAI
     openai_api_key: str | None = None
     embedding_provider: str = "openai"

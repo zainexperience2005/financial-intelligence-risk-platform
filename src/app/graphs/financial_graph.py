@@ -30,6 +30,7 @@ from app.graphs.nodes import (
     create_report,
     handle_data_requirement,
     plan_investigation,
+    prepare_turn,
 )
 from app.graphs.router import (
     route_after_analysis,
@@ -41,9 +42,14 @@ from app.graphs.router import (
 from app.graphs.state import FinancialState
 
 
-def build_financial_graph():
+def build_financial_graph(checkpointer=None):
     """Builds and compiles the multi-agent investigation graph."""
     builder = StateGraph(FinancialState)  # type: ignore[arg-type]
+
+    builder.add_node(
+        "prepare_turn",
+        prepare_turn,
+    )
 
     builder.add_node(
         "planner",
@@ -87,6 +93,11 @@ def build_financial_graph():
 
     builder.add_edge(
         START,
+        "prepare_turn",
+    )
+
+    builder.add_edge(
+        "prepare_turn",
         "planner",
     )
 
@@ -154,4 +165,4 @@ def build_financial_graph():
         END,
     )
 
-    return builder.compile()
+    return builder.compile(checkpointer=checkpointer)

@@ -1,3 +1,5 @@
+from langchain_core.messages import AIMessage
+
 from app.agents.data_analyst import run_data_analyst
 from app.agents.financial_assistant import ask_financial_assistant
 from app.agents.planner import create_investigation_plan
@@ -8,7 +10,22 @@ from app.agents.report_agent import create_investigation_report
 from app.agents.risk_agent import run_risk_agent
 from app.agents.sql_analyst import run_sql_analyst
 from app.graphs.state import FinancialState
+from app.services.conversation import format_recent_context
 from app.services.evidence import build_evidence_bundle
+
+
+def prepare_turn(
+    state: FinancialState,
+) -> dict:
+    """Resets turn-scoped specialist evidence while preserving thread messages."""
+    return {
+        "plan": None,
+        "sql_analysis": None,
+        "data_analysis": None,
+        "policy_analysis": None,
+        "risk_analysis": None,
+        "report": None,
+    }
 
 
 def analyze_question(
@@ -49,9 +66,12 @@ def handle_data_requirement(
 def plan_investigation(
     state: FinancialState,
 ) -> dict:
-    question = state["question"]
+    context = format_recent_context(state.get("messages", []))
 
-    plan = create_investigation_plan(question)
+    plan = create_investigation_plan(
+        question=state["question"],
+        conversation_context=context,
+    )
 
     return {
         "plan": plan,
@@ -118,4 +138,9 @@ def create_report(
 
     return {
         "report": report,
+        "messages": [
+            AIMessage(
+                content=report.executive_summary,
+            )
+        ],
     }

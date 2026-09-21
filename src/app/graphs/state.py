@@ -1,4 +1,7 @@
-from typing import TypedDict
+from typing import Annotated, TypedDict
+
+from langchain_core.messages import AnyMessage
+from langgraph.graph.message import add_messages
 
 from app.schemas import (
     DataAnalysisResult,
@@ -14,14 +17,18 @@ from app.schemas import (
 class FinancialState(TypedDict, total=False):
     question: str
 
-    plan: InvestigationPlan
-    analysis: FinancialAnalysis
+    plan: InvestigationPlan | None
+    analysis: FinancialAnalysis | None
 
-    sql_analysis: SQLAnalysisResult
+    sql_analysis: SQLAnalysisResult | None
 
     data_required: bool
     data_message: str
-    data_analysis: DataAnalysisResult
-    policy_analysis: PolicyAnalysisResult
-    risk_analysis: RiskAnalysisResult
-    report: InvestigationReport
+    data_analysis: DataAnalysisResult | None
+    policy_analysis: PolicyAnalysisResult | None
+    risk_analysis: RiskAnalysisResult | None
+    report: InvestigationReport | None
+    messages: Annotated[
+        list[AnyMessage],
+        add_messages,
+    ]

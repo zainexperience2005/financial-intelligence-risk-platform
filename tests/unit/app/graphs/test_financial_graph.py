@@ -6,6 +6,7 @@ def test_financial_graph_builds_and_contains_all_nodes():
 
     expected_nodes = {
         "__start__",
+        "prepare_turn",
         "planner",
         "sql_analyst",
         "data_analyst",
@@ -24,7 +25,8 @@ def test_financial_graph_has_valid_edges():
 
     # Verify key direct edges exist
     edges = set(graph.builder.edges)
-    assert ("__start__", "planner") in edges
+    assert ("__start__", "prepare_turn") in edges
+    assert ("prepare_turn", "planner") in edges
     assert ("risk_agent", "report") in edges
     assert ("report", "__end__") in edges
     assert ("data_required", "__end__") in edges

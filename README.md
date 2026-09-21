@@ -40,7 +40,8 @@ The platform coordinates specialized autonomous agents in a compiled **LangGraph
 
 ```mermaid
 flowchart TD
-    START([START]) --> Planner[Planner Agent<br/>plan_investigation]
+    START([START]) --> PrepareTurn[Prepare Turn<br/>prepare_turn<br/>Resets Turn-Scoped Evidence]
+    PrepareTurn --> Planner[Planner Agent<br/>plan_investigation<br/>+ Bounded Conversation Context]
     
     Planner -->|requires_sql = true| SQL[SQL Analyst Agent<br/>analyze_sql]
     Planner -->|requires_sql = false| AnalyzePolicy{requires_policy?}
@@ -140,6 +141,31 @@ One of the platform's core architectural achievements is crossing the boundary f
    ```
 4. **Tamper-Evident Audit Trail**:
    Every state change (`approval_requested`, `approval_approved`, `approval_rejected`, `action_executed`, `action_failed`) is permanently recorded in PostgreSQL with timestamp, actor, entity ID, and context metadata.
+
+---
+
+## 🧠 Persistent Short-Term Memory with LangGraph Checkpointing
+
+The platform persists conversation context across turns using **PostgreSQL checkpointing (`PostgresSaver`)**, allowing analysts to ask follow-up questions (e.g. resolving pronouns like *"Why was it high risk?"*) while enforcing strict context boundaries:
+
+```text
+Turn 1: "Investigate TX-1006."
+  └─► Planner retrieves TX-1006 records, evaluates risk, synthesizes report
+  └─► Executive summary saved to conversation thread (AIMessage)
+
+Turn 2: "Why was it considered high risk?" (same thread_id)
+  └─► prepare_turn resets previous specialist evidence (SQL, analytics, policies, report)
+  └─► Planner receives bounded recent conversation window (last 6 messages)
+  └─► Planner resolves "it" -> "TX-1006" and orchestrates targeted verification
+```
+
+### Memory Engineering Rules
+1. **Thread Identity != User Identity**: A `thread_id` identifies a specific investigation thread. Different `thread_id` values remain strictly isolated.
+2. **Turn-Scoped Specialist State vs. Persistent Context**:
+   - `messages`: Accumulated across turns via the `add_messages` reducer.
+   - Specialist evidence (`plan`, `sql_analysis`, `data_analysis`, `policy_analysis`, `risk_analysis`, `report`): Cleaned by `prepare_turn` at the start of each turn so stale findings are never mistaken for fresh evidence.
+3. **Memory is Context, Not Authoritative Authority**: Previous assistant statements provide semantic reference for coreference resolution, but live transactions and policy citations must always be verified afresh through controlled tools.
+4. **Bounded Context Windows**: `format_recent_context()` bounds recent context to the last 6 messages, preventing context window bloat and runaway token costs.
 
 ---
 
@@ -286,6 +312,7 @@ QDRANT_COLLECTION=financial_policies
 # Relational Database (PostgreSQL)
 DATABASE_URL=postgresql+psycopg://financial_user:financial_password@localhost:5432/financial_platform
 READ_ONLY_DATABASE_URL=postgresql+psycopg://financial_reader:financial_reader_password@localhost:5432/financial_platform
+CHECKPOINT_DATABASE_URL=postgresql://financial_user:financial_password@localhost:5432/financial_platform
 ```
 
 ### 4. Start Infrastructure with Docker Compose
@@ -305,10 +332,13 @@ Services exposed:
 # 1. Initialize PostgreSQL tables (accounts, customers, transactions, approvals, audit)
 python scripts/create_tables.py
 
-# 2. Seed synthetic financial data
+# 2. Setup LangGraph persistent checkpointing tables
+python scripts/setup_checkpoints.py
+
+# 3. Seed synthetic financial data
 python scripts/seed_database.py
 
-# 3. Ingest and index compliance policies into Qdrant
+# 4. Ingest and index compliance policies into Qdrant
 python scripts/index_policies.py
 ```
 
@@ -324,13 +354,25 @@ uvicorn app.main:app --reload --app-dir src --host 0.0.0.0 --port 8000
 
 Interactive OpenAPI docs: `http://localhost:8000/docs`
 
-### 1. Financial Investigation (`POST /chat`)
-Submits a query to the multi-agent investigation graph:
+### 1. Multi-Turn Financial Investigation (`POST /investigate` or `POST /chat`)
+Submits a query to the multi-agent investigation graph with conversation thread persistence:
 
 ```bash
-curl -X POST http://localhost:8000/chat \
+# Turn 1: Initial inquiry on thread demo-001
+curl -X POST http://localhost:8000/investigate \
   -H "Content-Type: application/json" \
-  -d '{"message": "Investigate account ACC-1001 for high-risk activity"}'
+  -d '{
+    "question": "Investigate transaction TX-1006.",
+    "thread_id": "demo-001"
+  }'
+
+# Turn 2: Follow-up inquiry referencing previous context
+curl -X POST http://localhost:8000/investigate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "Why was it considered high risk?",
+    "thread_id": "demo-001"
+  }'
 ```
 
 Returns a structured `InvestigationReport` with executive summary, authoritative findings, policy citations, calculated risk signals, and recommendations.

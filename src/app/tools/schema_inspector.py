@@ -13,7 +13,14 @@ class SchemaInspectorInput(BaseModel):
 
 
 # Internal system tables that must never be exposed to the LLM-driven SQL reader
-EXCLUDED_TABLES = {"approval_requests", "audit_events"}
+EXCLUDED_TABLES = {
+    "approval_requests",
+    "audit_events",
+    "checkpoint_migrations",
+    "checkpoints",
+    "checkpoint_blobs",
+    "checkpoint_writes",
+}
 
 
 class SchemaInspectorTool(BaseTool[SchemaInspectorInput]):
