@@ -24,7 +24,10 @@ where = ["src"]
 pythonpath = ["src"]
 testpaths = ["tests"]
 addopts = "--import-mode=importlib --strict-markers"
-markers = ["postgres: requires an explicitly configured PostgreSQL test database"]
+markers = [
+    "postgres: requires an explicitly configured PostgreSQL test database",
+    "integration: requires integration database/services",
+]
 
 [tool.ruff]
 line-length = 88

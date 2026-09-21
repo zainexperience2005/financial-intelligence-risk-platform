@@ -10,6 +10,10 @@ from app.tools.policy_retrieval import (
     PolicyRetrievalInput,
     PolicyRetrievalTool,
 )
+from app.tools.risk_scoring import (
+    RiskScoringInput,
+    RiskScoringTool,
+)
 from app.tools.safe_sql import (
     SafeSQLInput,
     SafeSQLTool,
@@ -30,4 +34,6 @@ __all__ = [
     "PolicyRetrievalTool",
     "CorrectivePolicyRetrievalInput",
     "CorrectivePolicyRetrievalTool",
+    "RiskScoringInput",
+    "RiskScoringTool",
 ]

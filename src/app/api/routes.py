@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from app.graphs import build_financial_graph
 from app.schemas import InvestigationResponse
@@ -14,7 +14,12 @@ financial_graph = build_financial_graph()
 class ChatRequest(BaseModel):
     """Request model for chat messages."""
 
-    message: str = Field(min_length=1)
+    message: str | None = None
+    question: str | None = None
+
+    @property
+    def query(self) -> str:
+        return self.message or self.question or ""
 
 
 @router.get("/health")
@@ -36,18 +41,21 @@ async def health_check() -> dict[str, str]:
 def chat(
     request: ChatRequest,
 ) -> InvestigationResponse:
+    query = request.query
+    if not query:
+        raise ValueError("Either 'message' or 'question' must be provided.")
+
     result = financial_graph.invoke(
         {
-            "question": request.message,
+            "question": query,
         }
     )
 
     return InvestigationResponse(
-        analysis=result["analysis"],
         plan=result["plan"],
-        data_required=result.get(
-            "data_required",
-            False,
-        ),
-        message=result.get("data_message"),
+        report=result["report"],
+        sql_analysis=result.get("sql_analysis"),
+        data_analysis=result.get("data_analysis"),
+        policy_analysis=result.get("policy_analysis"),
+        risk_analysis=result.get("risk_analysis"),
     )

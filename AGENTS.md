@@ -297,3 +297,101 @@ Do not treat an LLM retrieval grader as objective truth.
 
 CRAG quality must eventually be compared against the normal
 RAG baseline using evaluation data.
+
+
+## Risk Architecture
+
+Numeric risk scores and deterministic risk signals must be
+calculated by deterministic application logic, not invented
+by an LLM.
+
+The Risk Agent may explain verified risk evidence but must not
+modify the score or fabricate signals.
+
+Risk level does not establish fraud.
+
+Risk analysis should consume evidence produced by specialist
+components rather than independently retrieving unrestricted
+data.
+
+Customer-impacting actions are separate from risk assessment.
+
+A high-risk result may produce a recommendation for review,
+but execution requires the appropriate approval workflow.
+
+Risk rules and policy documents must remain version-aligned.
+
+## Evidence Synthesis
+
+Specialist components produce authoritative evidence.
+
+The report/synthesis layer may explain evidence but must not
+recalculate or replace authoritative tool outputs.
+
+SQL queries and rows come from SQL evidence.
+
+Analytics values come from deterministic analytics output.
+
+Policy citations come from retrieval metadata.
+
+Risk scores and signals come from the deterministic risk
+engine.
+
+The report agent does not receive operational tools.
+
+Missing or contradictory evidence must be represented as a
+limitation rather than filled using model knowledge.
+
+Recommendations and actions are separate concepts.
+
+A report may recommend an action but must not execute a
+customer-impacting action.
+
+
+## Approval and Action Architecture
+
+Recommendations, approvals, and action execution are separate
+concepts.
+
+LLMs may recommend customer-impacting actions but must not
+directly execute them.
+
+Protected actions require a valid approval generated for the
+exact action and exact arguments being executed.
+
+Approval checks must be enforced by deterministic application
+code, not prompts.
+
+Pending, rejected, missing, mismatched, or already-used
+approvals must never authorize execution.
+
+Approval IDs are single-use for protected actions.
+
+Operational tools must not be exposed directly to reasoning
+agents when doing so could bypass the approval boundary.
+
+The current freeze-account implementation is simulated until
+the mutation repository and audit trail are implemented.
+
+## Controlled Mutations
+
+Model-generated SQL always uses the read-only database role.
+
+Database mutations must use explicit application repositories
+and must never accept arbitrary model-generated SQL.
+
+Protected mutations require an approved request bound to the
+exact action and arguments.
+
+Approval consumption, state mutation, and successful-action
+audit recording should occur within one database transaction.
+
+Approval and audit tables are not exposed to the general
+LLM-driven SQL reader.
+
+Repositories do not decide policy or approval.
+
+Services coordinate authorization and transactions.
+
+LLMs may recommend actions but never receive unrestricted
+database write capabilities.

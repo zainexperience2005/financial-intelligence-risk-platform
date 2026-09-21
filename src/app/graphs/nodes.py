@@ -4,8 +4,11 @@ from app.agents.planner import create_investigation_plan
 from app.agents.policy_agent import (
     run_policy_agent,
 )
+from app.agents.report_agent import create_investigation_report
+from app.agents.risk_agent import run_risk_agent
 from app.agents.sql_analyst import run_sql_analyst
 from app.graphs.state import FinancialState
+from app.services.evidence import build_evidence_bundle
 
 
 def analyze_question(
@@ -80,4 +83,39 @@ def analyze_policy(
 
     return {
         "policy_analysis": result,
+    }
+
+
+def analyze_risk(
+    state: FinancialState,
+) -> dict:
+    sql_analysis = state.get("sql_analysis")
+
+    if sql_analysis is None or not sql_analysis.rows:
+        return {}
+
+    transaction = sql_analysis.rows[0]
+
+    customer_country = transaction.get("customer_country")
+
+    result = run_risk_agent(
+        transaction=transaction,
+        customer_country=customer_country,
+        policy_analysis=state.get("policy_analysis"),
+    )
+
+    return {
+        "risk_analysis": result,
+    }
+
+
+def create_report(
+    state: FinancialState,
+) -> dict:
+    evidence = build_evidence_bundle(state)
+
+    report = create_investigation_report(evidence)
+
+    return {
+        "report": report,
     }

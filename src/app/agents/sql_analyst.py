@@ -183,6 +183,9 @@ def run_sql_analyst(
             "the maximum number of tool iterations "
             "was reached."
         ),
+        sql_query=(last_sql_result.get("query") if last_sql_result else None),
+        row_count=(last_sql_result.get("row_count", 0) if last_sql_result else 0),
+        rows=(last_sql_result.get("rows", []) if last_sql_result else []),
         tool_iterations=loop_state.iterations,
         sql_attempts=loop_state.sql_attempts,
         failed_sql_attempts=(loop_state.failed_sql_attempts),

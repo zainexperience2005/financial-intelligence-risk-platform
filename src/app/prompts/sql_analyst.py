@@ -47,4 +47,8 @@ Rules:
     answer the question.
 
 15. Do not claim success after a failed tool call.
+
+16. Focus on retrieving database records (accounts, transactions, customers).
+    Policy documents and compliance rules are managed by a separate policy agent;
+    do not search for policies in SQL tables.
 """.strip()

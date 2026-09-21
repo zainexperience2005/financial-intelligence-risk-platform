@@ -4,18 +4,19 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688.svg)](https://fastapi.tiangolo.com/)
 [![LangGraph](https://img.shields.io/badge/LangGraph-Orchestration-orange.svg)](https://langchain-ai.github.io/langgraph/)
 [![Qdrant](https://img.shields.io/badge/Qdrant-Vector%20DB-dc2626.svg)](https://qdrant.tech/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791.svg)](https://www.postgresql.org/)
 [![Pydantic](https://img.shields.io/badge/Pydantic-v2-E92063.svg)](https://docs.pydantic.dev/)
 [![Code Style: Ruff](https://img.shields.io/badge/Code%20Style-Ruff-000000.svg)](https://github.com/astral-sh/ruff)
 
-An enterprise-grade, production-oriented **Agentic AI platform for financial intelligence, fraud detection, and risk operations**.
+An enterprise-grade, production-oriented **Agentic AI platform for financial intelligence, fraud investigation, and controlled risk mitigation**.
 
-The platform combines **LangGraph**, **PostgreSQL**, **Qdrant**, and a multi-agent topology to orchestrate structured investigation plans, secure read-only SQL retrieval, deterministic statistical data analysis, and **Corrective RAG (CRAG)** policy retrieval.
+The platform integrates **LangGraph multi-agent orchestration**, **PostgreSQL**, **Qdrant**, **AST-validated SafeSQL**, **Corrective RAG (CRAG)**, a **deterministic risk engine**, and a **tamper-evident human-in-the-loop approval & audit workflow** with real, controlled database mutations.
 
 ---
 
 ## 🏛️ Architectural Overview
 
-The repository enforces a strict, clean architecture separating domain-independent agentic infrastructure from domain-specific financial intelligence:
+The repository strictly enforces a clean architectural separation between domain-independent agentic infrastructure and domain-specific financial intelligence:
 
 ```
 src/
@@ -25,149 +26,213 @@ src/
 
 ### Dependency Rules & Design Principles
 - **Unidirectional Dependency Direction**: `app` depends on `kit`. `kit` **never** imports or depends on `app`.
-- **Infrastructure Reusability**: All LLM provider adapters, database validation engines, vector store clients, RAG/CRAG pipelines, generic tool registries, and loop controls live in `kit`.
-- **Domain Confinement**: Domain-specific prompts, database models (accounts, transactions, alerts), financial policies, and business workflows live strictly in `app`.
-- **Deterministic Routing**: Decisions are routed using structured state variables and deterministic Python routers rather than redundant model calls.
-- **Authoritative Data & Safety**: Model-generated queries never hit the database directly. All queries pass through an AST-based SQL validator and execute via a dedicated read-only role with single-statement constraints and strict execution budgets.
-- **Deterministic Math**: Calculations are executed with Python and Pandas rather than probabilistic LLM arithmetic.
-- **Corrective Policy Retrieval (CRAG)**: Retrieved policy evidence is actively graded for relevance. If evidence is weak or irrelevant, the query is rewritten and re-retrieved; if evidence is absent, the system explicitly marks the query as unanswerable rather than hallucinating policy rules.
+- **Infrastructure Reusability**: LLM provider factories, SQL AST validation engines, vector store clients, RAG/CRAG pipelines, generic tool registries, and loop controls live in `kit`.
+- **Domain Confinement**: Domain-specific prompts, database models (accounts, transactions, approval records, audit events), financial policy ingestion, risk rule evaluation, and business workflows live strictly in `app`.
+- **Deterministic Routing**: Workflow routing is driven by structured state variables and deterministic Python conditions rather than redundant LLM router calls.
+- **Authoritative Evidence Separation**: Specialist agents retrieve and compute authoritative facts. The report synthesis agent explains and contextualizes verified evidence without recalculating or inventing numbers.
+- **Strict Trust Boundary**: Models may recommend actions, but they **never** hold direct database write access or bypass human review.
 
 ---
 
-## 🔄 Multi-Agent Investigation Workflow
+## 🔄 Multi-Agent Investigation Topology
 
-The platform orchestrates financial investigations using a compiled **LangGraph** state graph:
+The platform coordinates specialized autonomous agents in a compiled **LangGraph** state graph:
 
 ```mermaid
 flowchart TD
     START([START]) --> Planner[Planner Agent<br/>plan_investigation]
     
     Planner -->|requires_sql = true| SQL[SQL Analyst Agent<br/>analyze_sql]
-    Planner -->|requires_sql = false| Analyze[Financial Analyst Agent<br/>analyze_question]
+    Planner -->|requires_sql = false| AnalyzePolicy{requires_policy?}
     
     SQL -->|requires_analytics = true| DataAnalyst[Data Analyst Agent<br/>analyze_data]
     SQL -->|requires_analytics = false & requires_policy = true| PolicyAgent[Policy Agent<br/>CRAG / analyze_policy]
-    SQL -->|no analytics or policy| Analyze
+    SQL -->|no analytics or policy| RiskCheck{requires_risk?}
     
     DataAnalyst -->|requires_policy = true| PolicyAgent
-    DataAnalyst -->|requires_policy = false| Analyze
+    DataAnalyst -->|requires_policy = false| RiskCheck
     
-    PolicyAgent --> Analyze
+    PolicyAgent --> RiskCheck
     
-    Analyze -->|requires_data = true| DataReq[Handle Data Requirement<br/>handle_data_requirement]
-    Analyze -->|requires_data = false| END_NODE([END])
+    RiskCheck -->|requires_risk = true| RiskAgent[Deterministic Risk Engine<br/>& Risk Agent]
+    RiskCheck -->|requires_risk = false| ReportAgent[Report Synthesis Agent<br/>Investigation Report]
     
-    DataReq --> END_NODE
+    RiskAgent --> ReportAgent
+    
+    ReportAgent --> END_NODE([END])
 ```
 
 ### Agents & Specialist Roles
 
 | Agent / Node | Primary Responsibility | Guardrails & Safety Controls |
 |---|---|---|
-| **Planner** | Evaluates user inquiry and produces a structured `InvestigationPlan` (determining whether SQL retrieval, data analytics, or policy grounding is required). | Outputs typed Pydantic plan; does not execute database queries or mutations directly. |
-| **SQL Analyst** | Retrieves authoritative financial records from PostgreSQL. | Read-only SELECT enforcement, AST single-statement validation, repeated query detection, iteration and attempt limits. |
-| **Data Analyst** | Runs deterministic computations (aggregations, sums, variances) over retrieved rows. | Uses explicit Python/Pandas operations rather than LLM calculation; bounded to tool-call budget. |
-| **Policy Agent** | Grounds findings in official financial risk policies using **Corrective RAG (CRAG)**. | Treats retrieved documents as untrusted evidence; grades relevance; bounded query rewriting; cites verified chunk IDs. |
-| **Financial Analyst** | Synthesizes retrieved records, calculated figures, and policy evidence into a comprehensive assessment. | Constrained to authoritative tool evidence; explicitly highlights missing records. |
-| **Data Required** | Gracefully handles scenarios where necessary records are missing or ambiguous. | Returns actionable next steps without guessing or hallucinating financial facts. |
+| **Planner Agent** | Analyzes inquiries and generates a typed `InvestigationPlan` establishing whether SQL retrieval, data analytics, policy grounding, or risk evaluation are needed. | Outputs structured Pydantic plan; performs no database access or analytical computation directly. |
+| **SQL Analyst Agent** | Retrieves authoritative financial records (accounts, transactions, customers). | AST single-statement validation (`sqlglot`), read-only SELECT enforcement, iteration budgets, and repeated-action detection. |
+| **Data Analyst Agent** | Computes statistical aggregations, sums, counts, and variance over retrieved rows. | Executes purely deterministic Python/Pandas operations; bounded by strict tool-call limits. |
+| **Policy Agent** | Grounds findings in official financial risk policies using **Corrective RAG (CRAG)**. | Evaluates candidate relevance; triggers bounded query rewriting if weak; refuses to guess if unanswerable. |
+| **Risk Agent** | Evaluates rule-based signals and risk thresholds against retrieved evidence. | Scores and flags are computed strictly by deterministic application code, never fabricated by the LLM. |
+| **Report Agent** | Synthesizes specialist findings into an analyst-ready `InvestigationReport`. | Derives citations and findings solely from authoritative evidence; cannot execute operational mutations. |
+
+---
+
+## 🛡️ Controlled Actions, Human Approvals & Persistent Audit Trail
+
+One of the platform's core architectural achievements is crossing the boundary from passive investigation into **real, controlled customer-impacting database mutations** while preserving an absolute trust boundary:
+
+```text
+                  AI Reasoning & Investigation
+                               │
+                               ▼
+                    Action Recommendation
+                               │
+              ─────────────────┴─────────────────
+                         TRUST BOUNDARY
+                               │
+                               ▼
+                    Action Proposal Created
+                               │
+                               ▼
+                     Human Compliance Review
+                         /          \
+                    reject          approve
+                      │                │
+                     STOP              ▼
+                             Exact Action Check
+                                       │
+                             Exact Arguments Check
+                                       │
+                              Single-Use Verification
+                                       │
+                                       ▼
+                             Controlled Repository
+                                       │
+                                       ▼
+                            PostgreSQL Transaction
+                                       │
+                     ┌─────────────────┼─────────────────┐
+                     ▼                 ▼                 ▼
+             account.status =     approval.status =   audit_events
+                 'frozen'            'executed'         recorded
+```
+
+### Key Security & Integrity Guarantees
+
+1. **Dual-Database Role Separation**:
+   - `financial_reader`: Dedicated SELECT-only PostgreSQL user used by `SafeSQLTool`. Can read business tables (`customers`, `accounts`, `transactions`) but is **strictly denied** `SELECT` access on `approval_requests` and `audit_events`.
+   - `financial_user`: Read/write application credentials used exclusively by deterministic application repositories. Never exposed to models.
+2. **Deterministic Pre-Execution Verification**:
+   Before executing an action, the application enforces:
+   - Approval exists and has `status == "approved"`.
+   - Action name matches exactly (e.g., `freeze_account`).
+   - Action arguments match exactly (e.g., `account_id` target).
+   - Single-use consumption (replays or previously executed approvals are rejected).
+3. **Atomic Single-Transaction Execution**:
+   The account mutation, approval execution mark, and audit event creation are executed inside a **single database transaction** with explicit rollback on error, preventing partial or orphaned state changes:
+   ```python
+   try:
+       freeze_account_record(account)
+       mark_approval_executed(approval)
+       record_audit_event(session, ...)
+       session.commit()
+   except Exception:
+       session.rollback()
+       raise
+   ```
+4. **Tamper-Evident Audit Trail**:
+   Every state change (`approval_requested`, `approval_approved`, `approval_rejected`, `action_executed`, `action_failed`) is permanently recorded in PostgreSQL with timestamp, actor, entity ID, and context metadata.
 
 ---
 
 ## 📚 Corrective RAG (CRAG) Architecture
 
-In standard RAG, vector retrieval may technically return chunks, but they may be irrelevant or insufficient to answer the query. CRAG sits on top of baseline RAG as an active control layer:
+Standard vector retrieval can return chunks that match keywords but fail to answer the financial policy question. CRAG adds an evaluation and correction loop:
 
 ```text
-                    User Query
-                        │
-                        ▼
-                 Vector Retrieval (Qdrant)
-                        │
-                        ▼
-               Retrieval Evaluator (LLM Grader)
-                        │
-             ┌──────────┴──────────┐
-             │                     │
-          relevant            weak/irrelevant
-             │                     │
-             │                     ▼
-             │                Query Rewriter
-             │                     │
-             │                     ▼
-             │               Vector Retrieval (Retry)
-             │                     │
-             │                     ▼
-             │               Re-evaluation
-             │                     │
-             │             ┌───────┴────────┐
-             │             │                │
-             │          usable       insufficient
-             │             │                │
-             └──────┬──────┘                │
-                    ▼                       ▼
-              Policy Evidence          Refuse to infer
+                    User Policy Inquiry
+                             │
+                             ▼
+                  Vector Retrieval (Qdrant)
+                             │
+                             ▼
+                  LLM Evidence Evaluator
+                             │
+              ┌──────────────┴──────────────┐
+              │                             │
+           Relevant                  Weak / Irrelevant
+              │                             │
+              │                             ▼
+              │                       Query Rewriter
+              │                             │
+              │                             ▼
+              │                      Vector Retrieval
+              │                             │
+              │                             ▼
+              │                      Re-evaluation
+              │                             │
+              │                     ┌───────┴───────┐
+              │                     │               │
+              │                  Usable        Insufficient
+              │                     │               │
+              └──────────────┬──────┘               │
+                             ▼                      ▼
+                       Policy Evidence      Refuse to Hallucinate
 ```
 
-- **Candidate Generation**: Qdrant vector search retrieves top-$k$ policy chunks.
-- **Evidence Evaluation**: Evaluates whether retrieved evidence actually answers the specific query (`relevant`, `partial`, `irrelevant`).
-- **Bounded Correction**: If evidence is weak, rewrites the retrieval query to better capture search intent and retries retrieval once (bounded to 1 attempt).
-- **Answerability Check**: Evaluates whether final evidence is sufficient (`CRAGResult.answerable`). If insufficient, the Policy Agent explicitly refuses to guess, preventing policy hallucination.
-- **Preserved Baseline**: The standard `PolicyRetrievalTool` remains intact to enable empirical quality comparisons against `CorrectivePolicyRetrievalTool`.
-
----
-
-## 🔒 Security & Safety Guarantees
-
-1. **AST-Based SQL Validation**: Queries are parsed with `sqlglot` to enforce single-statement `SELECT` operations only. Prohibits any `DROP`, `DELETE`, `UPDATE`, `INSERT`, `ALTER`, or administrative commands.
-2. **Dedicated Read-Only Database Role**: Database connections execute with a dedicated `financial_reader` user with SELECT-only database permissions.
-3. **Execution Budgets & Loop Controls**: Hard query timeouts, row count caps, maximum tool-call budgets, and repeated-query detection protect against denial of service and runaway loops.
-4. **Deterministic Calculation Engine**: Arithmetic calculations are executed with typed analytics operations, preventing model hallucinations in financial risk scoring.
+- **Relevance Grading**: Chunks are scored as `relevant`, `partial`, or `irrelevant`.
+- **Bounded Correction**: If initial chunks are weak, the query is rewritten and retrieval is re-executed once (bounded retry budget).
+- **Answerability Guard**: If evidence remains insufficient, the agent outputs an explicit refusal rather than fabricating policy thresholds.
 
 ---
 
 ## 📁 Project Structure
 
 ```
-├── pyproject.toml              # Build configuration and test dependencies
+├── pyproject.toml              # Build configuration, ruff settings, pytest markers
 ├── docker-compose.yml          # PostgreSQL 16 & Qdrant vector database services
-├── ARCHITECTURE.md             # High-level architecture and dependency rules
-├── AGENTS.md                   # Agent engineering standards and development guidelines
+├── ARCHITECTURE.md             # Clean architecture and dependency rules
+├── AGENTS.md                   # Agent engineering standards & safety directives
 ├── data/
-│   └── policies/               # Approved financial policies (markdown)
+│   └── policies/               # Official compliance & risk policy documents
 │       ├── account_restrictions.md
 │       ├── failed_transactions.md
 │       └── transaction_monitoring.md
 ├── scripts/
-│   ├── compare_rag_crag.py     # Compares baseline RAG with Corrective RAG
-│   ├── create_tables.py        # PostgreSQL schema initialization
-│   ├── index_policies.py       # Ingests & indexes policy markdown into Qdrant
-│   ├── seed_database.py        # Generates synthetic accounts and transactions
-│   ├── test_policy_agent.py    # Verification script for Policy Agent with CRAG
-│   └── test_sql_analyst.py     # Verification script for SQL Analyst agent
+│   ├── compare_rag_crag.py     # Compares standard RAG vs. Corrective RAG
+│   ├── create_tables.py        # Initializes PostgreSQL schema and tables
+│   ├── index_policies.py       # Chunks and embeds policy documents into Qdrant
+│   ├── seed_database.py        # Generates synthetic customers, accounts, and transactions
+│   ├── test_policy_agent.py    # Standalone verification for Policy Agent with CRAG
+│   └── test_sql_analyst.py     # Standalone verification for SQL Analyst Agent
 ├── src/
-│   ├── kit/                    # Reusable Agentic AI Infrastructure (Domain-Independent)
-│   │   ├── config/             # Pydantic Settings & environment loaders
+│   ├── kit/                    # Domain-Independent Agent Infrastructure
+│   │   ├── approvals/          # Generic human approval data schemas
+│   │   ├── config/             # Pydantic Settings & environment variables
 │   │   ├── crag/               # Evaluator, query rewriter, models, and pipeline
-│   │   ├── databases/sql/      # AST validator, connection managers, execution engine
-│   │   ├── embeddings/         # OpenAI embeddings factory
-│   │   ├── llms/               # ChatOpenAI provider factories and configuration
-│   │   ├── rag/                # Document chunking, metadata models, and retrieval
-│   │   ├── tools/              # Generic tool base classes, registry, LangChain adapters
-│   │   └── vectorstores/       # Qdrant client connection and collection factories
-│   └── app/                    # Financial Intelligence Platform (Domain-Specific)
-│       ├── agents/             # Planner, SQL Analyst, Data Analyst, Policy Agent
-│       ├── analytics/          # Deterministic analysis operations (sum, mean, etc.)
-│       ├── api/                # FastAPI application, routes, and request models
-│       ├── db/                 # Financial models (Accounts, Transactions, Alerts)
+│   │   ├── databases/          # SQL AST validator, connection pools, engines
+│   │   ├── embeddings/         # OpenAI embedding provider adapters
+│   │   ├── llms/               # ChatOpenAI factory and completion wrappers
+│   │   ├── rag/                # Document models, chunkers, retrieval contracts
+│   │   ├── tools/              # Abstract tool classes, registry, LangChain adapters
+│   │   └── vectorstores/       # Qdrant client connection and collection helpers
+│   └── app/                    # Domain-Specific Financial Intelligence Platform
+│       ├── actions/            # Controlled mutations (freeze_account)
+│       ├── agents/             # Planner, SQL Analyst, Data Analyst, Policy, Risk, Report
+│       ├── analytics/          # Deterministic computations (aggregations, sums, variances)
+│       ├── api/                # FastAPI routers: /chat, /actions, /approvals
+│       ├── db/                 # Models & Repositories (approvals, audit, accounts)
 │       ├── graphs/             # LangGraph state graph, nodes, and deterministic routers
-│       ├── prompts/            # Domain-specific agent system prompts
-│       ├── schemas/            # Pydantic structured output models
+│       ├── prompts/            # Financial specialist prompts & system instructions
+│       ├── risk/               # Deterministic risk scoring engine
+│       ├── schemas/            # Structured outputs (InvestigationPlan, Report, Actions)
+│       ├── services/           # Evidence collection and persistent approval services
 │       └── tools/              # SafeSQLTool, SchemaInspectorTool, DataAnalysisTool,
 │                               # PolicyRetrievalTool, CorrectivePolicyRetrievalTool
 └── tests/
-    ├── conftest.py             # Shared pytest fixtures
-    ├── integration/            # Integration tests with database and tool boundary
-    └── unit/                   # Comprehensive unit tests (80+ tests)
+    ├── conftest.py             # Deterministic test fixtures & mock environment
+    ├── integration/            # Real database and tool boundary tests
+    │   ├── actions/            # Freeze account, single-use, rollback, and audit tests
+    │   └── tools/              # SafeSQL execution and permission tests
+    └── unit/                   # 90+ comprehensive unit tests covering all agents and nodes
 ```
 
 ---
@@ -182,7 +247,7 @@ In standard RAG, vector retrieval may technically return chunks, but they may be
 ### 2. Environment Setup
 
 ```bash
-# Clone repository
+# Clone the repository
 git clone https://github.com/zainexperience2005/financial-intelligence-risk-platform.git
 cd financial-intelligence-risk-platform
 
@@ -193,19 +258,13 @@ python -m venv .venv
 # On Linux/macOS:
 source .venv/bin/activate
 
-# Install platform in editable mode
+# Install in editable mode with development dependencies
 pip install -e .
 ```
 
 ### 3. Environment Configuration
 
-Copy the example environment configuration:
-
-```bash
-cp .env.example .env
-```
-
-Set your credentials in `.env`:
+Create a `.env` file based on `.env.example`:
 
 ```env
 ENVIRONMENT=development
@@ -231,72 +290,110 @@ READ_ONLY_DATABASE_URL=postgresql+psycopg://financial_reader:financial_reader_pa
 
 ### 4. Start Infrastructure with Docker Compose
 
-Start PostgreSQL and Qdrant:
-
 ```bash
 docker compose up -d
 ```
 
 Services exposed:
-- **PostgreSQL**: `localhost:5432`
+- **PostgreSQL 16**: `localhost:5432`
 - **Qdrant HTTP & Dashboard**: `http://localhost:6333/dashboard`
 - **Qdrant gRPC**: `localhost:6334`
 
-### 5. Initialize & Seed Database and Vector Knowledge Base
+### 5. Initialize & Seed Knowledge Bases
 
 ```bash
-# Initialize PostgreSQL schema (Accounts, Transactions, Alerts)
+# 1. Initialize PostgreSQL tables (accounts, customers, transactions, approvals, audit)
 python scripts/create_tables.py
 
-# Seed database with sample financial records
+# 2. Seed synthetic financial data
 python scripts/seed_database.py
 
-# Index policy documents into Qdrant collection
+# 3. Ingest and index compliance policies into Qdrant
 python scripts/index_policies.py
 ```
 
 ---
 
-## ⚡ Running the API & Verification Scripts
+## ⚡ API Endpoints & Usage
 
-### Start the API Server
+Start the development server:
 
 ```bash
 uvicorn app.main:app --reload --app-dir src --host 0.0.0.0 --port 8000
 ```
 
-Access:
-- **Interactive OpenAPI Documentation**: `http://localhost:8000/docs`
-- **Health Check**: `GET http://localhost:8000/health`
-- **Chat Investigation Endpoint**: `POST http://localhost:8000/chat`
+Interactive OpenAPI docs: `http://localhost:8000/docs`
 
-### Run Verification Scripts
+### 1. Financial Investigation (`POST /chat`)
+Submits a query to the multi-agent investigation graph:
 
 ```bash
-# Verify Policy Agent with CRAG grounded retrieval
-python scripts/test_policy_agent.py
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Investigate account ACC-1001 for high-risk activity"}'
+```
 
-# Compare baseline RAG with Corrective RAG on off-topic questions
-python scripts/compare_rag_crag.py
+Returns a structured `InvestigationReport` with executive summary, authoritative findings, policy citations, calculated risk signals, and recommendations.
 
-# Verify SQL Analyst with SafeSQL
-python scripts/test_sql_analyst.py
+### 2. Propose an Action (`POST /actions/propose`)
+Creates a pending approval request and writes an audit event:
+
+```bash
+curl -X POST http://localhost:8000/actions/propose \
+  -H "Content-Type: application/json" \
+  -d '{
+    "action": "freeze_account",
+    "account_id": "ACC-1001",
+    "reason": "Suspicious transaction frequency exceeds risk threshold."
+  }'
+```
+
+### 3. Human Approval Workflow
+- **Inspect**: `GET /approvals/{approval_id}`
+- **Approve**:
+  ```bash
+  curl -X POST http://localhost:8000/approvals/{approval_id}/approve \
+    -H "Content-Type: application/json" \
+    -d '{"decided_by": "compliance_officer@example.com", "reason": "Verified alert."}'
+  ```
+- **Reject**:
+  ```bash
+  curl -X POST http://localhost:8000/approvals/{approval_id}/reject \
+    -H "Content-Type: application/json" \
+    -d '{"decided_by": "compliance_officer@example.com", "reason": "False positive."}'
+  ```
+
+### 4. Execute Controlled Action (`POST /actions/execute`)
+Executes the approved action within an atomic database transaction:
+
+```bash
+curl -X POST http://localhost:8000/actions/execute \
+  -H "Content-Type: application/json" \
+  -d '{
+    "action": "freeze_account",
+    "account_id": "ACC-1001",
+    "approval_id": "<approval_id>",
+    "executed_by": "analyst@example.com"
+  }'
 ```
 
 ---
 
-## 🧪 Testing & Quality Assurance
+## 🧪 Testing & Verification
 
-Run the comprehensive unit and integration test suite:
+The platform maintains a comprehensive test suite across unit and integration levels:
 
 ```bash
-# Run all unit tests (fast, offline with mocked dependencies)
-pytest
+# Run all unit tests (offline, fast)
+pytest tests/unit
 
-# Run tests with verbose output
-pytest -v
+# Run action integration tests
+pytest tests/integration/app/actions/test_freeze_account.py
 
-# Run linting and code style checks
+# Run all tests
+pytest tests/unit tests/integration/app/actions/test_freeze_account.py
+
+# Verify code formatting and linting
 ruff check .
 ruff format --check .
 ```

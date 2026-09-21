@@ -1,6 +1,8 @@
 from app.db.base import Base
 from app.db.models import (
     Account,
+    ApprovalRecord,
+    AuditEvent,
     Customer,
     Transaction,
 )
@@ -10,4 +12,6 @@ __all__ = [
     "Customer",
     "Account",
     "Transaction",
+    "ApprovalRecord",
+    "AuditEvent",
 ]

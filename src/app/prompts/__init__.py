@@ -2,6 +2,8 @@ from app.prompts.data_analyst import DATA_ANALYST_SYSTEM_PROMPT
 from app.prompts.financial import FINANCIAL_ASSISTANT_SYSTEM_PROMPT
 from app.prompts.planner import PLANNER_SYSTEM_PROMPT
 from app.prompts.policy_agent import POLICY_AGENT_SYSTEM_PROMPT
+from app.prompts.reports import REPORT_SYSTEM_PROMPT
+from app.prompts.risk_agent import RISK_AGENT_SYSTEM_PROMPT
 from app.prompts.sql_analyst import SQL_ANALYST_SYSTEM_PROMPT
 
 __all__ = [
@@ -10,4 +12,6 @@ __all__ = [
     "SQL_ANALYST_SYSTEM_PROMPT",
     "DATA_ANALYST_SYSTEM_PROMPT",
     "POLICY_AGENT_SYSTEM_PROMPT",
+    "RISK_AGENT_SYSTEM_PROMPT",
+    "REPORT_SYSTEM_PROMPT",
 ]

@@ -12,6 +12,10 @@ class SchemaInspectorInput(BaseModel):
     )
 
 
+# Internal system tables that must never be exposed to the LLM-driven SQL reader
+EXCLUDED_TABLES = {"approval_requests", "audit_events"}
+
+
 class SchemaInspectorTool(BaseTool[SchemaInspectorInput]):
     name = "schema_inspector"
 
@@ -28,7 +32,9 @@ class SchemaInspectorTool(BaseTool[SchemaInspectorInput]):
     ) -> ToolResult:
         inspector = inspect(self._engine)
 
-        available_tables = inspector.get_table_names()
+        available_tables = [
+            t for t in inspector.get_table_names() if t not in EXCLUDED_TABLES
+        ]
 
         if input_data.table_name is not None:
             if input_data.table_name not in available_tables:

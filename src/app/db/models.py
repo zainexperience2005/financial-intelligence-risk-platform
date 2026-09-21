@@ -1,11 +1,15 @@
 from datetime import datetime
 from decimal import Decimal
+from typing import Any
 
 from sqlalchemy import (
+    JSON,
+    CheckConstraint,
     DateTime,
     ForeignKey,
     Numeric,
     String,
+    Text,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -48,6 +52,13 @@ class Customer(Base):
 
 class Account(Base):
     __tablename__ = "accounts"
+
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('active', 'frozen', 'closed')",
+            name="ck_account_status",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
@@ -148,4 +159,98 @@ class Transaction(Base):
         DateTime(timezone=True),
         nullable=False,
         index=True,
+    )
+
+
+class ApprovalRecord(Base):
+    __tablename__ = "approval_requests"
+
+    approval_id: Mapped[str] = mapped_column(
+        String(36),
+        primary_key=True,
+    )
+
+    action: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+    )
+
+    arguments: Mapped[dict[str, Any]] = mapped_column(
+        JSON,
+        nullable=False,
+    )
+
+    reason: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(30),
+        nullable=False,
+        default="pending",
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    decided_by: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+
+    decision_reason: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    decided_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    executed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+
+class AuditEvent(Base):
+    __tablename__ = "audit_events"
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True,
+        autoincrement=True,
+    )
+
+    event_type: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+    )
+
+    actor: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+    )
+
+    entity_type: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+    )
+
+    entity_id: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+    )
+
+    details: Mapped[dict[str, Any]] = mapped_column(
+        JSON,
+        nullable=False,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
     )

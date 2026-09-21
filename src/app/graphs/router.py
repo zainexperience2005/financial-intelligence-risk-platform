@@ -25,13 +25,20 @@ def route_after_analysis(
 
 def route_after_planning(
     state: FinancialState,
-) -> Literal["sql", "analyze"]:
+) -> Literal[
+    "sql",
+    "policy",
+    "report",
+]:
     plan = state["plan"]
 
     if plan.requires_sql:
         return "sql"
 
-    return "analyze"
+    if plan.requires_policy:
+        return "policy"
+
+    return "report"
 
 
 def route_after_sql(
@@ -39,7 +46,8 @@ def route_after_sql(
 ) -> Literal[
     "analytics",
     "policy",
-    "analyze",
+    "risk",
+    "report",
 ]:
     plan = state["plan"]
 
@@ -49,16 +57,37 @@ def route_after_sql(
     if plan.requires_policy:
         return "policy"
 
-    return "analyze"
+    if plan.requires_risk:
+        return "risk"
+
+    return "report"
 
 
 def route_after_analytics(
     state: FinancialState,
 ) -> Literal[
     "policy",
-    "analyze",
+    "risk",
+    "report",
 ]:
-    if state["plan"].requires_policy:
+    plan = state["plan"]
+
+    if plan.requires_policy:
         return "policy"
 
-    return "analyze"
+    if plan.requires_risk:
+        return "risk"
+
+    return "report"
+
+
+def route_after_policy(
+    state: FinancialState,
+) -> Literal[
+    "risk",
+    "report",
+]:
+    if state["plan"].requires_risk:
+        return "risk"
+
+    return "report"
