@@ -104,3 +104,30 @@ Do not place finance-specific planning rules in `src/kit`.
 
 Graph routing should consume structured planner output rather
 than parsing natural-language planning text.
+
+
+## Tool Architecture
+
+Reusable tool infrastructure belongs in `src/kit/tools`.
+
+Domain-specific tool implementations belong in `src/app/tools`.
+
+Tools must:
+- have a clear name
+- have a clear description
+- use typed input schemas
+- return predictable results
+- expose controlled failures
+- be independently testable
+
+Agents must not directly access databases or external APIs
+when an appropriate tool boundary exists.
+
+Before creating a new tool:
+1. Search the existing tool registry.
+2. Reuse an existing capability where possible.
+3. Determine whether the tool is generic or domain-specific.
+4. Add reusable infrastructure to kit only when justified.
+
+Do not use an LLM for deterministic work that normal Python
+or a dedicated tool can perform reliably.
