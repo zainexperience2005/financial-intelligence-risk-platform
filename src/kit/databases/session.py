@@ -7,11 +7,17 @@ from kit.databases.engine import create_database_engine
 engine = create_database_engine()
 
 
-SessionFactory = sessionmaker(
-    bind=engine,
-    autoflush=False,
-    expire_on_commit=False,
-)
+def create_session_factory(
+    engine,
+) -> sessionmaker[Session]:
+    return sessionmaker(
+        bind=engine,
+        autoflush=False,
+        expire_on_commit=False,
+    )
+
+
+SessionFactory = create_session_factory(engine)
 
 
 def get_database_session() -> Generator[Session, None, None]:

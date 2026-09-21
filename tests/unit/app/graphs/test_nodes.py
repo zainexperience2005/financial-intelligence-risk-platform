@@ -4,12 +4,15 @@ from app.graphs.nodes import (
     analyze_data,
     analyze_policy,
     analyze_question,
+    analyze_risk,
     analyze_sql,
 )
+from app.risk.models import RiskAssessment
 from app.schemas import (
     DataAnalysisResult,
     FinancialAnalysis,
     PolicyAnalysisResult,
+    RiskAnalysisResult,
     SQLAnalysisResult,
 )
 
@@ -154,3 +157,94 @@ def test_create_report_node_appends_aimessage() -> None:
     assert result["report"] == fake_report
     assert len(result["messages"]) == 1
     assert result["messages"][0].content == "Executive summary test."
+
+
+# ---------------------------------------------------------------------------
+# analyze_risk node — 31.2 multi-transaction guard & evidence_sufficient fix
+# ---------------------------------------------------------------------------
+
+
+def _make_risk_result(
+    *, evidence_sufficient: bool, policy_grounded: bool
+) -> RiskAnalysisResult:
+    return RiskAnalysisResult(
+        assessment=RiskAssessment(score=30, level="low", signals=[]),
+        explanation="Low risk.",
+        evidence_sufficient=evidence_sufficient,
+        policy_grounded=policy_grounded,
+    )
+
+
+def test_analyze_risk_node_single_row_runs_agent() -> None:
+    """Risk analysis runs normally when exactly one transaction row is returned."""
+    fake_sql = SQLAnalysisResult(
+        summary="One transaction found.",
+        row_count=1,
+        rows=[{"transaction_id": "TX-001", "amount": "10000", "status": "completed"}],
+    )
+    fake_result = _make_risk_result(evidence_sufficient=True, policy_grounded=False)
+
+    with patch(
+        "app.graphs.nodes.run_risk_agent",
+        return_value=fake_result,
+    ):
+        result = analyze_risk(
+            {
+                "question": "What is the risk for TX-001?",
+                "sql_analysis": fake_sql,
+            }
+        )
+
+    assert result["risk_analysis"] == fake_result
+
+
+def test_analyze_risk_node_multi_row_skips_risk() -> None:
+    """Risk analysis is skipped for multi-row results (ambiguous scope)."""
+    fake_sql = SQLAnalysisResult(
+        summary="Multiple transactions found.",
+        row_count=3,
+        rows=[
+            {"transaction_id": "TX-001", "amount": "10000", "status": "completed"},
+            {"transaction_id": "TX-002", "amount": "20000", "status": "failed"},
+            {"transaction_id": "TX-003", "amount": "5000", "status": "completed"},
+        ],
+    )
+
+    result = analyze_risk(
+        {
+            "question": "What are the recent transactions?",
+            "sql_analysis": fake_sql,
+        }
+    )
+
+    assert result == {}
+
+
+def test_analyze_risk_node_no_sql_skips_risk() -> None:
+    """Risk analysis is skipped when sql_analysis is None."""
+    result = analyze_risk(
+        {
+            "question": "Generic question",
+            "sql_analysis": None,
+        }
+    )
+
+    assert result == {}
+
+
+def test_analyze_risk_node_empty_rows_skips_risk() -> None:
+    """Risk analysis is skipped when sql_analysis has no rows."""
+    fake_sql = SQLAnalysisResult(
+        summary="No transactions found.",
+        row_count=0,
+        rows=[],
+    )
+
+    result = analyze_risk(
+        {
+            "question": "TX-999 risk?",
+            "sql_analysis": fake_sql,
+        }
+    )
+
+    assert result == {}

@@ -450,3 +450,205 @@ unnecessary PII must not be stored in long-term memory.
 Applications decide what information is eligible for durable
 memory; models do not receive unrestricted persistence
 capabilities by default.
+
+
+## MCP
+
+This project uses MCP Python SDK v2.
+
+Use MCPServer rather than the legacy FastMCP API.
+
+MCP is a protocol boundary and must not duplicate domain
+business logic.
+
+MCP handlers should delegate to existing application or kit
+capabilities.
+
+MCP handlers are adapters over existing capabilities;
+business logic must not be reimplemented inside MCP handlers.
+
+Do not expose every internal Python function through MCP.
+
+MCP tools, resources, and prompts have different semantics
+and should be chosen intentionally.
+
+MCP does not replace authorization.
+
+Customer-impacting mutations must preserve the application's
+approval and audit architecture even when exposed through
+MCP.
+
+Prefer in-process MCP Client tests for server behavior before
+testing network transports.
+
+## MCP Agent Integration
+
+MCP capabilities must be dynamically discovered rather than
+duplicated as project-specific wrappers where practical.
+
+MCP tool schemas are external contracts.
+
+Do not silently discard unsupported JSON Schema semantics.
+
+The current generic LangChain adapter supports only the
+documented schema subset implemented by the adapter.
+
+MCP tools may be used by LangGraph agents through the generic
+kit adapter.
+
+Do not replace deterministic application workflows with an
+unconstrained all-tools agent merely because capabilities are
+available through MCP.
+
+MCP transport does not change authorization requirements.
+
+## Agent Architecture
+
+The financial platform uses a hybrid LangGraph architecture.
+
+Do not replace the main financial workflow with a single
+general-purpose ReAct agent.
+
+LLMs may make semantic decisions.
+
+Deterministic code must enforce workflow dependencies,
+authorization boundaries, mutations, and other invariants.
+
+Specialist agents receive only the tools required for their
+responsibility.
+
+Planner output must be normalized and validated before
+execution.
+
+Structured LLM output is not automatically trusted as a
+logically valid execution plan.
+
+Generic ReAct functionality belongs in kit/agents.
+
+Financial workflow logic belongs in app/graphs.
+
+MCP is a capability transport mechanism and does not define
+the agent architecture.
+
+
+## Backend Architecture
+
+FastAPI routers are transport boundaries.
+
+Routers validate HTTP input, invoke services, and return
+response schemas.
+
+Routers must not contain agent orchestration, database
+mutation logic, approval decisions, or business rules.
+
+Application services coordinate workflows.
+
+Repositories perform persistence operations.
+
+LangGraph invocation belongs behind an application service.
+
+All public API endpoints use the /api/v1 prefix.
+
+Liveness and readiness are separate concerns.
+
+Every HTTP request receives a request ID.
+
+Internal exceptions and stack traces must not be exposed to
+API consumers.
+
+Use meaningful HTTP status codes.
+
+Controlled action execution must lock the approval record
+before consuming an approval so that single-use approvals
+remain safe under concurrent requests.
+
+REST and MCP are separate interfaces over shared application
+capabilities.
+
+## Deployment
+
+The application must remain cloud-provider independent.
+
+Configuration is supplied through environment variables.
+
+Secrets must never be baked into Docker images.
+
+The API container runs as a non-root user.
+
+Application database access and model-generated read-only SQL
+use separate database credentials.
+
+Do not perform network calls or infrastructure initialization
+as accidental module-import side effects.
+
+Infrastructure bootstrap, synthetic data seeding, and policy
+indexing are separate operations.
+
+Persistent services use durable volumes in local Docker
+Compose.
+
+Deployment-specific configuration belongs under infra/.
+
+Docker and deployment changes must preserve the app -> kit
+dependency direction.
+
+Use health endpoints for process liveness and readiness
+endpoints for required dependency availability.
+
+## CI/CD
+
+All changes must preserve passing CI.
+
+Before proposing a completed implementation, coding agents
+should run the narrowest relevant tests, followed by the
+standard CI checks when practical.
+
+Unit tests must not require external LLM calls.
+
+Tests requiring external model providers must be explicitly
+marked as LLM tests.
+
+Infrastructure-dependent tests belong under integration/.
+
+CI verifies code quality, tests, and Docker buildability.
+
+Deployment must not occur from pull-request workflows.
+
+Deployment-specific configuration belongs under infra/.
+
+Application code must remain cloud-provider independent.
+
+Secrets must come from deployment or CI secret stores and
+must never be committed to the repository.
+
+Published container images should use immutable identifiers
+such as Git commit SHAs rather than relying only on latest.
+
+
+## Production Deployment
+
+Render is the currently validated production deployment
+target.
+
+A coding agent must not introduce AWS-, Render-, or
+Oracle-specific behavior into src/app or src/kit.
+
+Provider-specific deployment configuration belongs under
+infra/.
+
+Changes to production deployment must preserve:
+
+- CI-before-deploy
+- health/readiness checks
+- environment-based secrets
+- database least privilege
+- rollback capability
+
+Do not modify production secrets.
+
+Do not trigger production deployments unless explicitly
+requested.
+
+Do not automatically run destructive database operations,
+synthetic data seeding, or policy reindexing during normal
+application startup.

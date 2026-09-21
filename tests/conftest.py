@@ -8,6 +8,8 @@ from kit.config import get_settings
 
 # Set deterministic defaults before test collection imports application modules.
 os.environ.update(
+    APP_ENV="test",
+    ENVIRONMENT="test",
     DATABASE_URL="sqlite://",
     READ_ONLY_DATABASE_URL="sqlite://",
     CHECKPOINT_DATABASE_URL="sqlite://",
@@ -26,3 +28,12 @@ def clear_settings_cache():
     get_settings.cache_clear()
     yield
     get_settings.cache_clear()
+
+
+@pytest.fixture
+def client():
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    return TestClient(app)

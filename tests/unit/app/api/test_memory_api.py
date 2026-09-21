@@ -16,9 +16,12 @@ def test_api_remember_endpoint() -> None:
         metadata={"source": "explicit_api"},
     )
 
-    with patch("app.api.memory.memory_service.remember", return_value=fake_record):
+    with patch(
+        "app.api.routes.memory.memory_service.remember",
+        return_value=fake_record,
+    ):
         response = client.post(
-            "/memory",
+            "/api/v1/memory",
             json={
                 "content": "Investigation note.",
                 "retention_days": 30,
@@ -29,6 +32,7 @@ def test_api_remember_endpoint() -> None:
         data = response.json()
         assert data["memory_id"] == "test-mem-1"
         assert data["content"] == "Investigation note."
+        assert "X-Request-ID" in response.headers
 
 
 def test_api_recall_endpoint() -> None:
@@ -42,9 +46,12 @@ def test_api_recall_endpoint() -> None:
         )
     ]
 
-    with patch("app.api.memory.memory_service.recall", return_value=fake_results):
+    with patch(
+        "app.api.routes.memory.memory_service.recall",
+        return_value=fake_results,
+    ):
         response = client.post(
-            "/memory/recall",
+            "/api/v1/memory/recall",
             json={
                 "query": "Investigation",
                 "k": 5,
@@ -56,11 +63,12 @@ def test_api_recall_endpoint() -> None:
         assert len(data) == 1
         assert data[0]["memory_id"] == "test-mem-1"
         assert data[0]["score"] == 0.91
+        assert "X-Request-ID" in response.headers
 
 
 def test_api_forget_endpoint() -> None:
-    with patch("app.api.memory.memory_service.forget") as mock_forget:
-        response = client.delete("/memory/test-mem-1")
+    with patch("app.api.routes.memory.memory_service.forget") as mock_forget:
+        response = client.delete("/api/v1/memory/test-mem-1")
 
         assert response.status_code == 200
         assert response.json() == {
@@ -68,3 +76,4 @@ def test_api_forget_endpoint() -> None:
             "memory_id": "test-mem-1",
         }
         mock_forget.assert_called_once_with("test-mem-1")
+        assert "X-Request-ID" in response.headers

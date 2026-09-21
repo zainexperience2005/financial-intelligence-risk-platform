@@ -3,7 +3,7 @@ from app.db.repositories.accounts import (
     get_account_by_business_id,
 )
 from app.db.repositories.approvals import (
-    get_approval,
+    get_approval_for_update,
     mark_approval_executed,
 )
 from app.db.repositories.audit import (
@@ -15,6 +15,34 @@ from kit.databases.session import (
 )
 
 
+def _record_denied_attempt(
+    *,
+    actor: str,
+    account_id: str,
+    approval_id: str,
+    reason: str,
+) -> None:
+    """Records a blocked action attempt in an isolated, committed transaction."""
+    try:
+        with SessionFactory() as audit_session:
+            record_audit_event(
+                audit_session,
+                event_type="action_execution_denied",
+                actor=actor,
+                entity_type="account",
+                entity_id=account_id,
+                details={
+                    "action": "freeze_account",
+                    "approval_id": approval_id,
+                    "reason": reason,
+                },
+            )
+            audit_session.commit()
+    except Exception:
+        # Non-blocking fallback for audit errors during denied attempts
+        pass
+
+
 def freeze_account(
     *,
     account_id: str,
@@ -23,12 +51,18 @@ def freeze_account(
 ) -> ActionResult:
     """Executes an authorized account freeze mutation within an atomic transaction."""
     with SessionFactory() as session:
-        approval = get_approval(
+        approval = get_approval_for_update(
             session,
             approval_id,
         )
 
         if approval is None:
+            _record_denied_attempt(
+                actor=actor,
+                account_id=account_id,
+                approval_id=approval_id,
+                reason="approval_not_found",
+            )
             return ActionResult(
                 action="freeze_account",
                 account_id=account_id,
@@ -37,6 +71,17 @@ def freeze_account(
             )
 
         if approval.status != "approved":
+            reason = (
+                "approval_already_executed"
+                if approval.status == "executed"
+                else f"approval_{approval.status}"
+            )
+            _record_denied_attempt(
+                actor=actor,
+                account_id=account_id,
+                approval_id=approval_id,
+                reason=reason,
+            )
             return ActionResult(
                 action="freeze_account",
                 account_id=account_id,
@@ -45,6 +90,12 @@ def freeze_account(
             )
 
         if approval.action != "freeze_account":
+            _record_denied_attempt(
+                actor=actor,
+                account_id=account_id,
+                approval_id=approval_id,
+                reason="action_mismatch",
+            )
             return ActionResult(
                 action="freeze_account",
                 account_id=account_id,
@@ -55,6 +106,12 @@ def freeze_account(
         approved_account = approval.arguments.get("account_id")
 
         if approved_account != account_id:
+            _record_denied_attempt(
+                actor=actor,
+                account_id=account_id,
+                approval_id=approval_id,
+                reason="account_mismatch",
+            )
             return ActionResult(
                 action="freeze_account",
                 account_id=account_id,
@@ -68,6 +125,12 @@ def freeze_account(
         )
 
         if account is None:
+            _record_denied_attempt(
+                actor=actor,
+                account_id=account_id,
+                approval_id=approval_id,
+                reason="account_not_found",
+            )
             return ActionResult(
                 action="freeze_account",
                 account_id=account_id,
@@ -105,4 +168,10 @@ def freeze_account(
 
         except Exception:
             session.rollback()
+            _record_denied_attempt(
+                actor=actor,
+                account_id=account_id,
+                approval_id=approval_id,
+                reason="execution_failed",
+            )
             raise

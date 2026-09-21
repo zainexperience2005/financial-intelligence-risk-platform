@@ -140,3 +140,64 @@ def get_action_approval(
             session,
             approval_id,
         )
+
+
+class ApprovalService:
+    """Application service coordinating approval operations and status transitions."""
+
+    def get(
+        self,
+        approval_id: str,
+    ) -> ApprovalRecord:
+        record = get_action_approval(approval_id)
+        if record is None:
+            from app.core.exceptions import ResourceNotFoundError
+
+            raise ResourceNotFoundError("Approval not found.")
+        return record
+
+    def approve(
+        self,
+        *,
+        approval_id: str,
+        actor: str,
+        reason: str | None = None,
+    ) -> ApprovalRecord:
+        record = get_action_approval(approval_id)
+        if record is None:
+            from app.core.exceptions import ResourceNotFoundError
+
+            raise ResourceNotFoundError("Approval not found.")
+        if record.status != "pending":
+            from app.core.exceptions import ActionNotAllowedError
+
+            raise ActionNotAllowedError("Approval request has already been decided.")
+
+        return approve_action(
+            approval_id=approval_id,
+            decided_by=actor,
+            reason=reason,
+        )
+
+    def reject(
+        self,
+        *,
+        approval_id: str,
+        actor: str,
+        reason: str | None = None,
+    ) -> ApprovalRecord:
+        record = get_action_approval(approval_id)
+        if record is None:
+            from app.core.exceptions import ResourceNotFoundError
+
+            raise ResourceNotFoundError("Approval not found.")
+        if record.status != "pending":
+            from app.core.exceptions import ActionNotAllowedError
+
+            raise ActionNotAllowedError("Approval request has already been decided.")
+
+        return reject_action(
+            approval_id=approval_id,
+            decided_by=actor,
+            reason=reason,
+        )

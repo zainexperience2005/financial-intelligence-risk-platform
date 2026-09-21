@@ -10,4 +10,7 @@ class RiskAnalysisResult(BaseModel):
 
     evidence_sufficient: bool
 
+    policy_grounded: bool = False
+    """True when policy retrieval was performed and returned grounded results."""
+
     policy_sources: list[str] = Field(default_factory=list)

@@ -41,7 +41,12 @@ def run_risk_agent(
             {citation.source for citation in policy_analysis.citations}
         )
 
-    evidence_sufficient = bool(policy_analysis and policy_analysis.grounded)
+    # Evidence is sufficient when we have the transaction row and a deterministic
+    # risk assessment — the only required authoritative inputs for risk scoring.
+    # Policy retrieval enriches the explanation but is not a prerequisite for a
+    # valid risk result; it is tracked separately via policy_grounded.
+    policy_grounded = bool(policy_analysis and policy_analysis.grounded)
+    evidence_sufficient = bool(transaction and assessment)
 
     model = create_chat_model()
 
@@ -50,7 +55,7 @@ def run_risk_agent(
         "risk_assessment": (assessment.model_dump(mode="json")),
         "policy_summary": (policy_analysis.summary if policy_analysis else None),
         "policy_sources": policy_sources,
-        "policy_grounded": (policy_analysis.grounded if policy_analysis else False),
+        "policy_grounded": policy_grounded,
     }
 
     response = model.invoke(
@@ -74,5 +79,6 @@ def run_risk_agent(
         assessment=assessment,
         explanation=str(response.content),
         evidence_sufficient=evidence_sufficient,
+        policy_grounded=policy_grounded,
         policy_sources=policy_sources,
     )

@@ -30,15 +30,21 @@ def route_after_planning(
     "policy",
     "report",
 ]:
-    plan = state["plan"]
+    plan = state.get("plan")
 
-    if plan.requires_sql:
+    if plan is None:
+        return "report"
+
+    if plan.requires_sql or plan.requires_analytics or plan.requires_risk:
         return "sql"
 
     if plan.requires_policy:
         return "policy"
 
     return "report"
+
+
+route_plan = route_after_planning
 
 
 def route_after_sql(

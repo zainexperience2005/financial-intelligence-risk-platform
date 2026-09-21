@@ -1,0 +1,28 @@
+name: Deploy to Render
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target deployment environment"
+        required: true
+        default: "production"
+
+jobs:
+  deploy:
+    name: Deploy to Render
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Compute image tag
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Trigger Render Deploy
+        run: |
+          echo "Deploying commit ${{ steps.vars.outputs.sha_short }} to Render ${{ github.event.inputs.environment }}..."
+          # Render webhook deploy call:
+          # curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"

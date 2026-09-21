@@ -71,6 +71,7 @@ def test_build_evidence_complete_bundle() -> None:
             ),
             explanation="High-value flagged transaction.",
             evidence_sufficient=True,
+            policy_grounded=True,
             policy_sources=["transaction_monitoring.md"],
         ),
     }

@@ -40,6 +40,20 @@ def get_approval(
     return session.scalar(statement)
 
 
+def get_approval_for_update(
+    session: Session,
+    approval_id: str,
+) -> ApprovalRecord | None:
+    """Retrieves an approval record and locks the row for update."""
+    statement = (
+        select(ApprovalRecord)
+        .where(ApprovalRecord.approval_id == approval_id)
+        .with_for_update()
+    )
+
+    return session.scalar(statement)
+
+
 def approve_record(
     record: ApprovalRecord,
     *,

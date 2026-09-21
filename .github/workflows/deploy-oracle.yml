@@ -1,0 +1,26 @@
+name: Deploy to Oracle Cloud
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target deployment environment"
+        required: true
+        default: "staging"
+
+jobs:
+  deploy:
+    name: Deploy to OCI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Compute image tag
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Deploy placeholder
+        run: |
+          echo "Oracle Cloud deploy pipeline placeholder for image tag ${{ steps.vars.outputs.sha_short }}"

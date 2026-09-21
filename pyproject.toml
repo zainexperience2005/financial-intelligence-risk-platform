@@ -4,10 +4,10 @@ version = "0.1.0"
 description = "Agentic AI platform for financial intelligence and risk operations."
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi", "uvicorn", "pydantic>=2,<3", "pydantic-settings>=2,<3",
+    "fastapi", "uvicorn", "gunicorn", "pydantic>=2,<3", "pydantic-settings>=2,<3",
     "sqlalchemy>=2,<3", "psycopg[binary]>=3,<4", "sqlglot", "pandas",
     "langchain-core", "langchain-openai", "langgraph", "langchain-qdrant",
-    "qdrant-client",
+    "qdrant-client", "mcp[cli]>=2,<3",
 ]
 
 [project.optional-dependencies]
@@ -25,8 +25,12 @@ pythonpath = ["src"]
 testpaths = ["tests"]
 addopts = "--import-mode=importlib --strict-markers"
 markers = [
+    "integration: requires infrastructure",
+    "llm: requires an external LLM provider",
+    "qdrant: requires Qdrant",
+    "mcp: MCP integration test",
+    "e2e: end-to-end system test",
     "postgres: requires an explicitly configured PostgreSQL test database",
-    "integration: requires integration database/services",
 ]
 
 [tool.ruff]
@@ -35,6 +39,7 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+ignore = ["B008"]
 
 [tool.pyright]
 extraPaths = ["src"]

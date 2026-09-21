@@ -9,6 +9,7 @@ from app.agents.policy_agent import (
 from app.agents.report_agent import create_investigation_report
 from app.agents.risk_agent import run_risk_agent
 from app.agents.sql_analyst import run_sql_analyst
+from app.graphs.dependencies import normalize_plan
 from app.graphs.state import FinancialState
 from app.services.conversation import format_recent_context
 from app.services.evidence import build_evidence_bundle
@@ -72,6 +73,7 @@ def plan_investigation(
         question=state["question"],
         conversation_context=context,
     )
+    plan = normalize_plan(plan)
 
     return {
         "plan": plan,
@@ -112,6 +114,12 @@ def analyze_risk(
     sql_analysis = state.get("sql_analysis")
 
     if sql_analysis is None or not sql_analysis.rows:
+        return {}
+
+    # Risk analysis requires a single unambiguous transaction.
+    # When multiple rows are returned the investigation is not scoped to one
+    # transaction, so we cannot produce a valid deterministic risk score.
+    if len(sql_analysis.rows) > 1:
         return {}
 
     transaction = sql_analysis.rows[0]
