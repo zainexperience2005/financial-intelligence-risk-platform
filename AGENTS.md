@@ -31,3 +31,19 @@ The repository contains:
 - Add tests for reusable kit components.
 - Prefer explicit code over hidden magic.
 - Do not introduce a new dependency without justification.
+
+## Prompt Rules
+
+Generic prompt-building utilities belong in `src/kit/prompts`.
+
+Domain-specific prompts belong in `src/app/prompts`.
+
+Do not place business-specific instructions inside the kit.
+
+## Structured Output
+
+Prefer Pydantic structured outputs when model results are consumed
+by application logic.
+
+Do not parse free-form LLM text when a typed schema can represent
+the required result.

@@ -1,30 +1,40 @@
-from langchain_core.messages import HumanMessage, SystemMessage
-
+from app.prompts import FINANCIAL_ASSISTANT_SYSTEM_PROMPT
+from app.schemas import FinancialAnalysis
 from kit.llms import create_chat_model
-
-SYSTEM_PROMPT = """
-You are a financial intelligence assistant.
-
-Your current responsibility is only to answer general
-financial-analysis questions.
-
-Do not claim to have queried databases, policies, transactions,
-or external systems unless such capabilities are explicitly
-provided to you.
-"""
+from kit.prompts import create_chat_prompt
 
 
-def ask_financial_assistant(question: str) -> str:
+def ask_financial_assistant(
+    question: str,
+) -> FinancialAnalysis:
     """
-    Asks the financial assistant a question and returns the response.
+    Answers financial analysis questions using a language model.
+
+    This function uses:
+    - FINANCIAL_ASSISTANT_SYSTEM_PROMPT
+    - Pydantic-based structured output
+    - A simple chat chain without tools or external data access
+
+    Returns:
+        FinancialAnalysis
     """
     model = create_chat_model()
 
-    response = model.invoke(
-        [
-            SystemMessage(content=SYSTEM_PROMPT),
-            HumanMessage(content=question),
-        ]
+    structured_model = model.with_structured_output(
+        FinancialAnalysis
     )
 
-    return str(response.content)
+    prompt = create_chat_prompt(
+        system_prompt=FINANCIAL_ASSISTANT_SYSTEM_PROMPT,
+        human_template="{question}",
+    )
+
+    chain = prompt | structured_model
+
+    result = chain.invoke(
+        {
+            "question": question,
+        }
+    )
+
+    return result

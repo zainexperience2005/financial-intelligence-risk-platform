@@ -1,0 +1,3 @@
+from app.prompts.financial import FINANCIAL_ASSISTANT_SYSTEM_PROMPT
+
+__all__ = ["FINANCIAL_ASSISTANT_SYSTEM_PROMPT"]
