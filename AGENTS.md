@@ -67,3 +67,40 @@ Nodes should:
 
 Prefer deterministic Python nodes when LLM reasoning is
 not required.
+
+
+## Routing Rules
+
+Prefer deterministic routing when the required routing signal
+already exists in structured state.
+
+Do not add an additional LLM call when normal Python can make
+the decision reliably.
+
+Routers should:
+- inspect explicit graph state
+- return a small typed set of route names
+- avoid side effects
+- avoid modifying state
+
+Keep routing separate from business operations where practical.
+
+
+## Planning Rules
+
+The planner determines WHAT work is required.
+
+The planner must not perform the actual work.
+
+Planning output should be structured and validated.
+
+Prefer capability flags or typed task descriptions over
+free-form planning prose when downstream graph routing depends
+on the result.
+
+Application-specific planning logic belongs in `src/app`.
+
+Do not place finance-specific planning rules in `src/kit`.
+
+Graph routing should consume structured planner output rather
+than parsing natural-language planning text.

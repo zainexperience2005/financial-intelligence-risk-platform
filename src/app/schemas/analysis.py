@@ -2,6 +2,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from app.schemas.plan import InvestigationPlan
+
 
 class FinancialAnalysis(BaseModel):
     summary: str = Field(
@@ -22,3 +24,11 @@ class FinancialAnalysis(BaseModel):
             "to company or transaction data."
         )
     )
+
+
+class InvestigationResponse(BaseModel):
+    analysis: FinancialAnalysis
+    plan: InvestigationPlan
+    data_required: bool = False
+
+    message: str | None = None

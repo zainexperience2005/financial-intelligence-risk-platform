@@ -1,7 +1,6 @@
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
-from app.schemas import FinancialAnalysis
-from app.agents.financial_assistant import ask_financial_assistant
+from app.schemas import FinancialAnalysis, InvestigationResponse
 from kit.config import get_settings
 from app.graphs import build_financial_graph
 
@@ -24,17 +23,26 @@ async def health_check() -> dict[str, str]:
         "version": settings.app_version,
     }
 
+
 @router.post(
     "/chat",
-    response_model=FinancialAnalysis,
+    response_model=InvestigationResponse,
 )
 async def chat(
     request: ChatRequest,
-) -> FinancialAnalysis:
+) -> InvestigationResponse:
     result = financial_graph.invoke(
         {
             "question": request.message,
         }
     )
 
-    return result["analysis"]
+    return InvestigationResponse(
+        analysis=result["analysis"],
+        plan=result["plan"],
+        data_required=result.get(
+            "data_required",
+            False,
+        ),
+        message=result.get("data_message"),
+    )
