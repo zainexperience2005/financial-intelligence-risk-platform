@@ -94,9 +94,9 @@ jobs:
         run: |
           pip install -r requirements.txt
 
-      - name: Create database tables
+      - name: Apply database migrations
         run: |
-          PYTHONPATH=src python scripts/create_tables.py
+          alembic upgrade head
 
       - name: Run database integration tests
         run: |

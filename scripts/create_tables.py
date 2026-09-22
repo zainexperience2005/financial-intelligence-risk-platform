@@ -1,13 +1,11 @@
-from app.db import Base
-from kit.databases import create_database_engine
+from alembic import command
+from alembic.config import Config
 
 
 def main() -> None:
-    engine = create_database_engine()
-
-    Base.metadata.create_all(bind=engine)
-
-    print("Financial database tables created.")
+    alembic_cfg = Config("alembic.ini")
+    command.upgrade(alembic_cfg, "head")
+    print("Database migrations applied successfully via Alembic.")
 
 
 if __name__ == "__main__":

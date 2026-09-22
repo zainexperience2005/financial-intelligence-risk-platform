@@ -35,3 +35,16 @@ down:
 
 logs:
 	docker compose logs -f api
+
+migrate:
+	alembic upgrade head
+
+migration:
+	alembic revision --autogenerate -m "$(m)"
+
+migration-current:
+	alembic current
+
+migration-history:
+	alembic history
+

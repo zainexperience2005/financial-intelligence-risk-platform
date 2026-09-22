@@ -3,17 +3,17 @@
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams
 
-from app.db.models import Base
 from kit.config import get_settings
-from kit.databases.engine import create_database_engine
 from kit.embeddings import create_embeddings
 
 
 def create_database_tables() -> None:
-    settings = get_settings()
-    engine = create_database_engine(settings.database_url)
-    Base.metadata.create_all(bind=engine)
-    print("PostgreSQL tables created.")
+    from alembic import command
+    from alembic.config import Config
+
+    alembic_cfg = Config("alembic.ini")
+    command.upgrade(alembic_cfg, "head")
+    print("Database migrations applied successfully via Alembic.")
 
 
 def setup_checkpoints() -> None:
