@@ -8,7 +8,7 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791.svg)](https://www.postgresql.org/)
 [![Pydantic](https://img.shields.io/badge/Pydantic-v2-E92063.svg)](https://docs.pydantic.dev/)
 [![Code Style: Ruff](https://img.shields.io/badge/Code%20Style-Ruff-000000.svg)](https://github.com/astral-sh/ruff)
-[![Tests](https://img.shields.io/badge/tests-168%20passed-brightgreen.svg)](#-testing--verification)
+[![Tests](https://img.shields.io/badge/tests-201%20passed-brightgreen.svg)](#-testing--verification)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg)](./Dockerfile)
 
 An enterprise-grade, production-oriented **Agentic AI platform for financial intelligence, fraud investigation, and controlled risk mitigation**.
@@ -725,11 +725,14 @@ Production deployment to **Render** is a separate gated workflow triggered manua
 ## 🧪 Testing & Verification
 
 ```bash
-# Run all 152 unit tests (offline, fast — no DB or LLM required)
-pytest tests/unit
+# Run all 201 offline unit and security regression tests (no DB or LLM required)
+pytest tests/unit tests/security
 
-# Run with verbose output
+# Run unit tests only (168 tests)
 pytest tests/unit -v
+
+# Run security red-team regression suite (33 tests)
+pytest tests/security -v
 
 # Lint check
 ruff check .
@@ -744,10 +747,19 @@ pytest tests/integration/app/actions/ -m postgres -v
 python scripts/smoke_test.py
 ```
 
-### Test Coverage Areas (168 Unit Tests)
+### Test Coverage Areas (201 Offline Tests)
 
 | Area | Tests | Notes |
 |---|---|---|
+| **SQL Attack & AST Boundaries** | 9 | Rejection of DELETE, UPDATE, DROP, ALTER, INSERT, CTE disguises, multi-statements |
+| **Approval Bypass Prevention** | 3 | Block missing approvals, pending status, rejected status |
+| **Approval Replay Protection** | 2 | Block repeated reuse of executed approvals, audit count invariant |
+| **Argument Binding & Substitution** | 3 | Account ID mismatch rejection, state integrity, unsupported actions |
+| **Prompt Injection Defenses** | 3 | Direct injection at SQL boundary, indirect RAG tool exclusion, tool observation data boundary |
+| **MCP Protocol Security** | 2 | Mutation tools unexposed (`freeze_account`), SafeSQL query enforcement |
+| **Tool Abuse Prevention** | 3 | LoopController repeated-action blocking, failure budget ceiling, tool-call budget ceiling |
+| **Resource Limits & Cost Ceilings** | 5 | Max iterations, token limits, cost limits, fail-closed unpriced calls, context flooding |
+| **Secret Redaction & Observability** | 3 | Recursive credential scrubbing (`api_key`, `token`, `password`), LangSmith trace sanitization |
 | **Risk Engine** | 3 | Deterministic score calculations |
 | **Risk Agent** | 4 | `evidence_sufficient` semantics, `policy_grounded` separation |
 | **Graph Nodes** | 11 | All nodes including multi-transaction risk guard |
@@ -779,7 +791,37 @@ python scripts/smoke_test.py
 | **Financial Graph** | 2 | End-to-end multi-agent investigation graph |
 | **Short-Term Memory** | 1 | Turn-scoped state isolation |
 | **Dependencies & Setup** | 3 | Graph dependencies and memory app service |
-| **Total** | **168** | **100% offline, deterministic, zero external API dependencies** |
+| **Total** | **201** | **100% offline, deterministic, zero external API dependencies** |
+
+---
+
+## 🛡️ Security Threat Model & Red-Team Suite (Step 39)
+
+The platform establishes formal defense-in-depth where **LLM outputs, tool outputs, user inputs, and retrieved chunks are treated as untrusted data**.
+
+### Six Primary Guardrails
+
+1. **Safe SQL**: AST parsing with `sqlglot` strictly enforcing read-only SELECT statements, single-statement policies, and execution via a dedicated least-privilege PostgreSQL reader role.
+2. **Controlled Actions**: Human approval workflow requiring signed, single-use `ApprovalRecord` bound to exact action names and target account arguments, executed with row-level locks (`SELECT ... FOR UPDATE`).
+3. **Agent Resource Limits**: Deterministic loop controllers enforcing hard ceilings on iterations, tool calls, repeated actions, failure counts, cumulative tokens, and monetary cost (USD).
+4. **Corrective RAG (CRAG) Grounding**: Automated relevance assessment isolating untrusted document content, preventing retrieval from acquiring system-instruction authority.
+5. **MCP Capability Boundaries**: Strict protocol allowlisting preventing autonomous exposure of sensitive mutation tools like `freeze_account`.
+6. **Secret & Credential Redaction**: Recursive mapping redaction scrubbing API keys, tokens, passwords, and authorization headers from logs and LangSmith traces.
+
+### Security Threat Matrix
+
+| Threat | Primary Control | Secondary Control | Regression Test |
+|---|---|---|---|
+| **SQL Mutation Injection** | AST Single-statement Validator | SELECT-only DB Role | `tests/security/test_sql_attacks.py` |
+| **Approval Gate Bypass** | Single-use Approval Token Gate | ActionService argument check | `tests/security/test_approval_bypass.py` |
+| **Approval Replay Attack** | Status transition to `executed` | Audit event count invariant | `tests/security/test_approval_replay.py` |
+| **Argument Substitution** | Strict Argument Binding (`account_id`) | Database state immutability check | `tests/security/test_argument_substitution.py` |
+| **Direct / Indirect Prompt Injection** | Untrusted Evidence Isolation Boundary | No autonomous execution tools | `tests/security/test_prompt_injection.py` |
+| **Infinite Agent Loops** | LoopController Repetition Guard | Graph recursion limit | `tests/security/test_tool_abuse.py` |
+| **Cost & Token Exhaustion** | Strict Token & Cost Budget Enforcement | Fail-closed on unpriced models | `tests/security/test_resource_limits.py` |
+| **Context Window Flooding** | Deterministic ContextBuilder Budgeting | Question schema length validation | `tests/security/test_resource_limits.py` |
+| **MCP Protocol Privilege Abuse** | Tool Exposure Allowlisting | Underlying SafeSQL enforcement | `tests/security/test_mcp_security.py` |
+| **Credential & Secret Leakage** | Recursive `redact_mapping` Utility | Trace metadata sanitization | `tests/security/test_secret_leakage.py` |
 
 ---
 

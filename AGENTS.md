@@ -875,3 +875,44 @@ positive and negative examples.
 
 Experiments should record dataset, model, prompt/ruleset
 version, and source revision where practical.
+
+
+## Security
+
+All LLM outputs, user inputs, retrieved documents, tool
+outputs, MCP responses, and model-generated SQL are
+untrusted until validated by deterministic code.
+
+Prompt instructions are not authorization controls.
+
+Model-generated SQL must pass AST validation and execute
+through a least-privilege read-only database role.
+
+Customer-impacting mutations require an approved request
+bound to the exact action and exact arguments.
+
+Approvals are single-use and must be protected against
+concurrent replay.
+
+LLMs must never receive direct database write capability.
+
+MCP exposure does not bypass existing authorization,
+validation, or approval boundaries.
+
+Retrieved documents and tool outputs remain untrusted data
+even when included in an LLM context.
+
+Agent executions must enforce iteration, tool-call,
+failure, repetition, token, cost, and context limits.
+
+Credentials and unnecessary PII must not be placed in
+prompts, traces, logs, or model-visible tool errors.
+
+Security invariants belong in deterministic regression
+tests whenever possible.
+
+A recommendation by an LLM is not evidence that an action
+was executed.
+
+Operational action truth comes from deterministic
+application state and the audit trail.
