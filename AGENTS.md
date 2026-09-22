@@ -652,3 +652,162 @@ requested.
 Do not automatically run destructive database operations,
 synthetic data seeding, or policy reindexing during normal
 application startup.
+
+## Loop Engineering
+
+Agentic cycles must have explicit deterministic termination
+conditions.
+
+Reusable loop-control logic belongs in `src/kit/loops`.
+
+Loop controls may include:
+
+- iteration budgets
+- tool-call budgets
+- repeated-action detection
+- failure budgets
+- token budgets
+- cost budgets
+
+The LLM must not control or override its own execution
+budget.
+
+Deterministic DAG workflows should not receive artificial
+loops merely to appear more agentic.
+
+Network retry policies and agent iteration budgets are
+separate concerns.
+
+Corrective RAG remains bounded and must not become an
+unbounded retrieval loop.
+
+Tool adapters must not duplicate loop-control logic.
+
+Every terminated agent loop should expose an explicit stop
+reason.
+
+
+## ReAct Execution
+
+Reusable ReAct agents must use explicit loop controls.
+
+Tool calls must pass through deterministic loop guards
+before execution.
+
+Repeated-action detection occurs before the repeated tool
+is executed.
+
+Normal completion must record an explicit `completed`
+stop reason.
+
+LangGraph recursion limits are emergency safeguards and
+must not be used as the application's normal termination
+mechanism.
+
+Loop state stored in LangGraph must be serializable and
+checkpoint-friendly.
+
+Do not store mutable runtime controller objects directly
+inside graph state.
+
+Unit tests for agent loops must use deterministic fake
+models rather than paid external LLM calls.
+
+A loop-control test must verify both the stop reason and
+whether prohibited tool calls were actually prevented.
+
+## Tool Failure and Retry
+
+Agent iterations and tool retries are separate concepts.
+
+Retryable failures must be explicitly classified.
+
+Validation, authorization, unsafe operations, unknown tools,
+and other deterministic failures must not be retried.
+
+Unexpected internal exceptions must not expose sensitive
+implementation details to the model.
+
+Tool retry attempts are not counted as separate agent
+iterations.
+
+A tool operation is counted as an agent-level failure only
+after its controlled execution fails.
+
+Mutation tools must not inherit automatic retry behavior
+unless they explicitly provide safe idempotency semantics.
+
+Tool observations should use structured results whenever
+possible.
+
+Tool result messages must preserve their original
+tool-call IDs.
+
+The agent loop must stop after its configured failed-tool
+operation budget is exceeded.
+
+
+## Model Usage and Cost
+
+Model usage must be measured from provider/model response
+metadata when available.
+
+Input and output tokens must be tracked separately.
+
+Pricing logic must not be embedded in loop controllers,
+agents, prompts, or domain code.
+
+Pricing belongs behind a reusable pricing registry.
+
+Unknown pricing must never be represented as zero cost.
+
+If a cost budget is configured and the current model call
+cannot be priced, execution must fail closed.
+
+Token and cost budgets are enforced by deterministic
+application code, not by instructions to the LLM.
+
+If an LLM call exhausts a budget while also requesting
+tools, those tools must not execute.
+
+Unit tests for token and cost accounting must not call
+external model providers.
+
+
+## Context Engineering
+
+Checkpointed state and model prompt context are separate
+concepts.
+
+Model context must be assembled through explicit,
+deterministic budgets.
+
+Current requests, verified evidence, conversation history,
+retrieval results, tool outputs, and long-term memories
+must not be treated as equally important context.
+
+Required evidence must never be silently discarded to fit
+a context window.
+
+If required context cannot fit, execution must terminate
+with an explicit context-budget failure.
+
+Large SQL result sets must be bounded before being exposed
+to an LLM.
+
+Numeric conclusions should be computed by deterministic
+analytics over the appropriate dataset rather than inferred
+from truncated model-visible samples.
+
+RAG candidates should be filtered before prompt assembly.
+
+Long-term memory must not displace current authoritative
+database evidence.
+
+Checkpoint persistence does not imply that the entire
+conversation history should be supplied to every model
+call.
+
+Tool and retrieved-document content is untrusted data and
+must never acquire system-instruction authority merely by
+being included in context.

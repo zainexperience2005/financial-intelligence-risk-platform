@@ -8,7 +8,7 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791.svg)](https://www.postgresql.org/)
 [![Pydantic](https://img.shields.io/badge/Pydantic-v2-E92063.svg)](https://docs.pydantic.dev/)
 [![Code Style: Ruff](https://img.shields.io/badge/Code%20Style-Ruff-000000.svg)](https://github.com/astral-sh/ruff)
-[![Tests](https://img.shields.io/badge/tests-115%20passed-brightgreen.svg)](#-testing--verification)
+[![Tests](https://img.shields.io/badge/tests-152%20passed-brightgreen.svg)](#-testing--verification)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg)](./Dockerfile)
 
 An enterprise-grade, production-oriented **Agentic AI platform for financial intelligence, fraud investigation, and controlled risk mitigation**.
@@ -263,6 +263,75 @@ Standard vector retrieval can match keywords while missing the actual policy que
 
 ---
 
+## ⚙️ Loop Engineering & Reusable Agent Runtime (Steps 32–36)
+
+To move beyond unconstrained `while True:` agent loops, the platform includes a modular, domain-independent **Loop Engineering and Agent Control Stack** inside `src/kit/`:
+
+```text
+                    USER / SYSTEM
+                         │
+                         ▼
+                  Context Builder
+           (Priority-based budget degradation)
+                         │
+              Bounded Context Window
+                         │
+                         ▼
+                    ReAct Agent
+                         │
+            ┌────────────┴────────────┐
+            ▼                         ▼
+      Loop Controller             LLM Usage
+     (Restorable state)      (Tokens + Cost USD)
+      │   │   │   │                   │
+  iters tools fails reps              │
+      │   │   │   │                   ▼
+      └───┴───┴───┴─────────── Fail-Closed Check
+                  │
+             Loop Guard
+                  │
+        (Pre-execution check)
+                  │
+                  ▼
+       Controlled Tool Executor
+         (Bounded Exponential Retries)
+           ↙                     ↘
+      Success             Permanent Failure
+         │                         │
+         ▼                         ▼
+    Observation           controller.record_failure()
+         │                         │
+         └───────────┬─────────────┘
+                     ▼
+             Continue or Halt?
+              ↙             ↘
+          Allow             END
+```
+
+### 1. Reusable Loop Controller (`kit/loops`)
+- **Restorable State**: Stored as serializable Pydantic models (`LoopBudget`, `LoopStatus`, `LoopUsage`), avoiding active runtime objects inside LangGraph/PostgreSQL checkpoints.
+- **Multi-Dimensional Budgets**: Enforces iterations, tool calls, failures, repeated action signatures, token consumption, and cost in USD.
+- **Action Signature Deduplication**: Computes canonical SHA-256 signatures of tool calls (`tool_name` + sorted arguments) to stop repeated actions before execution.
+
+### 2. Controlled Tool Executor & Retry Policies (`kit/tools`)
+- **Transient vs. Permanent Classification**: Retries timeouts, connection resets, and HTTP 502/503/429 with bounded exponential backoff (`RetryPolicy`), while validation errors, syntax errors, and permission denials halt immediately without retries.
+- **Accounting Separation**: Internal retry attempts are not counted as separate agent iterations; a tool failure is recorded only when the controlled executor exhausts all attempts.
+- **Exception Sanitization**: Unhandled exceptions are masked as generic `INTERNAL_TOOL_ERROR` observations to prevent leaking database connection strings or filesystem paths to the LLM.
+
+### 3. Model Usage Tracking & Decoupled Pricing (`kit/llms`)
+- **Usage Extraction**: Extracts input, output, and cache-read tokens directly from provider response metadata.
+- **Decoupled Pricing Registry**: `PricingRegistry` maps model IDs to rate configurations (`ModelPricing`) without hardcoding rates in agent prompts or business logic.
+- **Fail-Closed Cost Safeguard**: If a cost budget ceiling is configured but the model response cannot be priced, execution fails closed with `StopReason.UNKNOWN_COST`.
+- **Tool Suppression**: If an LLM call exhausts a token or cost budget while proposing tool calls, routing halts immediately at `END` — the proposed tools are never executed.
+
+### 4. Context & Memory Budget Engineering (`kit/context`, `app/services/sql_context`)
+- **Typed Context Categories**: `SYSTEM`, `CURRENT_REQUEST`, `CONVERSATION`, `TOOL_RESULT`, `RETRIEVAL`, `MEMORY`.
+- **Priority-Based Selection**: Fills available headroom with highest-priority items first and drops lower-priority items when capacity is reached.
+- **Fail-Loud Required Context**: If essential system instructions or user requests exceed capacity, raises `ContextBudgetExceededError` (`StopReason.CONTEXT_BUDGET`) rather than silently discarding required facts.
+- **SQL Context Bounding**: Slices raw SQL results to `MAX_MODEL_SQL_ROWS = 50` with explicit truncation metadata for model visibility, while deterministic analytics process the un-truncated dataset.
+
+---
+
 ## 🚀 Production Backend Architecture
 
 The FastAPI application follows a clean layered structure:
@@ -317,17 +386,19 @@ Every HTTP request receives a unique `X-Request-ID` header via `RequestIDMiddlew
 │   └── compare_rag_crag.py     # RAG vs. CRAG evaluation script
 ├── src/
 │   ├── kit/                    # Domain-Independent Agent Infrastructure
-│   │   ├── agents/             # Generic ReAct agent builder
+│   │   ├── agents/             # Loop-controlled ReAct agent builder & executor nodes
 │   │   ├── config/             # Pydantic Settings & environment variables
+│   │   ├── context/            # Context categories, token estimator, priority builder
 │   │   ├── crag/               # Evaluator, query rewriter, models, and pipeline
 │   │   ├── databases/          # SQL AST validator, session pools, engines
 │   │   ├── embeddings/         # OpenAI embedding provider adapters
 │   │   ├── graphs/             # LangGraph PostgreSQL checkpointing helpers
-│   │   ├── llms/               # ChatOpenAI factory and completion wrappers
+│   │   ├── llms/               # ChatOpenAI factory, usage extractor, tracker, pricing registry
+│   │   ├── loops/              # LoopController, budgets, action signatures, stop reasons
 │   │   ├── mcp/                # MCP server infrastructure (MCPServer v2)
 │   │   ├── memory/             # Memory record models, service, and vector store
 │   │   ├── rag/                # Document models, chunkers, retrieval contracts
-│   │   ├── tools/              # Abstract tool classes, registry, LangChain adapters
+│   │   ├── tools/              # Abstract tool classes, registry, ControlledToolExecutor, retry policy
 │   │   └── vectorstores/       # Qdrant client connection and collection helpers
 │   └── app/                    # Domain-Specific Financial Intelligence Platform
 │       ├── actions/            # Controlled mutations (freeze_account with audit)
@@ -348,7 +419,7 @@ Every HTTP request receives a unique `X-Request-ID` header via `RequestIDMiddlew
 │       ├── rag/                # Policy document ingestion and retrieval
 │       ├── risk/               # Deterministic risk scoring engine and signal models
 │       ├── schemas/            # Shared Pydantic schemas (InvestigationPlan, Report, Actions)
-│       ├── services/           # Investigation, approval, evidence, memory, conversation services
+│       ├── services/           # Investigation, approval, evidence, memory, SQL context services
 │       ├── tools/              # SafeSQLTool, SchemaInspectorTool, DataAnalysisTool,
 │       │                       # PolicyRetrievalTool, CorrectivePolicyRetrievalTool
 │       └── main.py             # FastAPI app factory with lifespan, middleware, error handlers
@@ -361,15 +432,15 @@ Every HTTP request receives a unique `X-Request-ID` header via `RequestIDMiddlew
     │   │   └── mcp/            # MCP server integration tests
     │   ├── database/           # Schema and repository tests
     │   └── kit/                # Kit infrastructure integration tests
-    └── unit/                   # 115 unit tests covering all agents, nodes, tools, kit
+    └── unit/                   # 152 unit tests covering all agents, nodes, tools, kit
         ├── app/
         │   ├── agents/         # Data analyst, policy agent, SQL loop, risk agent
         │   ├── api/            # Memory API endpoint tests
         │   ├── graphs/         # Graph build, routing, nodes, short-term memory
         │   ├── risk/           # Deterministic risk engine scoring
-        │   ├── services/       # Evidence bundle, conversation context, memory
+        │   ├── services/       # Evidence bundle, conversation context, memory, SQL context
         │   └── tools/          # Policy retrieval, CRAG, schema inspector, analytics
-        └── kit/                # LLM factory, RAG, CRAG, SQL validator, memory, tools
+        └── kit/                # ReAct runtime, loop controller, context builder, pricing, tools
 ```
 
 ---
@@ -581,7 +652,7 @@ Production deployment to **Render** is a separate gated workflow triggered manua
 ## 🧪 Testing & Verification
 
 ```bash
-# Run all 115 unit tests (offline, fast — no DB or LLM required)
+# Run all 152 unit tests (offline, fast — no DB or LLM required)
 pytest tests/unit
 
 # Run with verbose output
@@ -600,25 +671,39 @@ pytest tests/integration/app/actions/ -m postgres -v
 python scripts/smoke_test.py
 ```
 
-### Test Coverage Areas
+### Test Coverage Areas (152 Unit Tests)
 
 | Area | Tests | Notes |
 |---|---|---|
-| Risk Engine | 3 | Deterministic score calculations |
-| Risk Agent | 4 | `evidence_sufficient` semantics, `policy_grounded` separation |
-| Graph Nodes | 11 | All nodes including multi-transaction risk guard |
-| Graph Routing | 14 | All route combinations |
-| SQL Analyst Loop | 4 | Loop state tracking |
-| Policy Agent | 3 | CRAG evaluation, budget exhaustion |
-| Data Analyst | 2 | Direct summary and tool execution |
-| Evidence Bundle | 2 | Partial and complete bundles |
-| Memory Service | 3 | Remember, recall, forget |
-| Conversation Context | 3 | Bounded context window |
-| CRAG Pipeline | 3 | Relevant/irrelevant/unanswerable paths |
-| SQL Validator | 6 | SELECT-only, AST rejection, limit injection |
-| Tool Registry | 3 | Register, duplicate rejection, unknown tool |
-| Kit LLMs | 4 | Config defaults, provider mapping |
-| Kit RAG | 10 | Chunking, metadata, retrieval |
+| **Risk Engine** | 3 | Deterministic score calculations |
+| **Risk Agent** | 4 | `evidence_sufficient` semantics, `policy_grounded` separation |
+| **Graph Nodes** | 11 | All nodes including multi-transaction risk guard |
+| **Graph Routing** | 14 | All route combinations |
+| **SQL Analyst Loop** | 4 | Loop state tracking |
+| **Policy Agent** | 3 | CRAG evaluation, budget exhaustion |
+| **Data Analyst** | 2 | Direct summary and tool execution |
+| **Evidence Bundle** | 2 | Partial and complete bundles |
+| **Memory Service** | 3 | Remember, recall, forget |
+| **Conversation Context** | 3 | Bounded context window |
+| **CRAG Pipeline** | 3 | Relevant/irrelevant/unanswerable paths |
+| **SQL Validator** | 6 | SELECT-only, AST rejection, limit injection |
+| **Tool Registry & Adapters** | 4 | Register, duplicate rejection, unknown tool, LangChain adapter |
+| **Controlled Tool Executor** | 7 | Transient retry, permanent error, exception masking, normalization |
+| **Loop Controller** | 11 | Iterations, tool calls, repeated actions, failures, token/cost budgets, fail-closed |
+| **ReAct Agent Runtime** | 10 | Scenarios A/B/C/D, repeated actions, tool failure, token/cost/context budgets |
+| **LLM Usage & Pricing** | 5 | Token extraction, cached cost, pricing registry, unknown cost |
+| **Context Builder** | 4 | Priority selection, token estimation, overflow guard, headroom reserve |
+| **SQL Model Context Service** | 2 | Row slicing and truncation metadata |
+| **Kit LLMs** | 4 | Config defaults, provider mapping |
+| **Kit RAG** | 10 | Chunking, metadata, retrieval |
+| **Data Analysis Tools** | 16 | Analytics schema, aggregation, group sum, counts |
+| **Schema Inspector** | 3 | Table listing, column inspection, unknown table |
+| **Policy Retrieval Tools** | 4 | Direct and corrective policy retrieval tools |
+| **Memory API Endpoints** | 3 | FastAPI memory routes |
+| **Financial Graph** | 2 | End-to-end multi-agent investigation graph |
+| **Short-Term Memory** | 1 | Turn-scoped state isolation |
+| **Dependencies & Setup** | 3 | Graph dependencies and memory app service |
+| **Total** | **152** | **100% offline, deterministic, zero external API dependencies** |
 
 ---
 
