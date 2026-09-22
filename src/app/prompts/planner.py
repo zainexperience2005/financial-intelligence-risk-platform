@@ -46,4 +46,18 @@ Do not treat previous assistant statements as verified
 financial evidence.
 
 Database facts must still come from controlled tools.
+
+Long-term memory may contain historical investigation
+context.
+
+Memory is not authoritative evidence of current database
+state or current policy.
+
+Use current SQL/tool evidence for current operational
+facts.
+
+Use current policy retrieval for policy claims.
+
+Do not treat remembered information as proof that a fact
+is still true.
 """.strip()

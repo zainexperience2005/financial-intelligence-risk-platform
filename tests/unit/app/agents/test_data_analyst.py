@@ -75,3 +75,66 @@ def test_data_analyst_executes_tool_and_returns_aggregation():
     assert result.operation == "sum"
     assert result.result == 25000.0
     assert result.source_row_count == 2
+
+
+def test_data_analyst_executes_chart_tool_and_attaches_artifact():
+    mock_model = MagicMock()
+    mock_model.bind_tools.return_value = mock_model
+
+    mock_model.invoke.side_effect = [
+        AIMessage(
+            content="",
+            tool_calls=[
+                {
+                    "name": "create_chart",
+                    "args": {
+                        "spec": {
+                            "chart_type": "line",
+                            "title": "Revenue",
+                            "series": [{"name": "Revenue", "x": ["Jan"], "y": [100.0]}],
+                            "filename": "revenue.png",
+                        }
+                    },
+                    "id": "call_chart_1",
+                }
+            ],
+        ),
+        AIMessage(
+            content="Revenue chart was generated successfully.",
+            tool_calls=[],
+        ),
+    ]
+
+    mock_tool = MagicMock()
+    mock_tool.invoke.return_value = {
+        "success": True,
+        "data": {
+            "filename": "revenue.png",
+            "path": "artifacts/charts/revenue.png",
+            "chart_type": "line",
+            "title": "Revenue",
+            "data_points": 1,
+            "truncated": False,
+        },
+    }
+
+    with (
+        patch(
+            "app.agents.data_analyst.create_chat_model",
+            return_value=mock_model,
+        ),
+        patch(
+            "app.agents.data_analyst.to_langchain_tool",
+            return_value=mock_tool,
+        ),
+    ):
+        result = run_data_analyst(
+            question="Plot revenue over time",
+            rows=[{"month": "Jan", "revenue": 100.0}],
+        )
+
+    assert "Revenue chart was generated" in result.summary
+    assert result.chart is not None
+    assert result.chart.filename == "revenue.png"
+    assert result.chart.chart_type == "line"
+    assert result.chart.data_points == 1

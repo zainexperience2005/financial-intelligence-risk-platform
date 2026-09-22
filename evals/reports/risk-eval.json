@@ -4,6 +4,7 @@
   "passed_cases": 4,
   "total_checks": 12,
   "passed_checks": 12,
+  "latency_seconds": 0.014557800022885203,
   "accuracy_pct": 100.0,
   "results": [
     {
@@ -29,6 +30,7 @@
           "RISK_REVIEW_FAILURE"
         ]
       },
+      "latency_seconds": 0.014478600001893938,
       "scores": [
         {
           "scorer": "risk_score",
@@ -64,6 +66,7 @@
         "risk_level": "low",
         "expected_signals": []
       },
+      "latency_seconds": 4.539999645203352e-05,
       "scores": [
         {
           "scorer": "risk_score",
@@ -103,6 +106,7 @@
           "HIGH_VALUE"
         ]
       },
+      "latency_seconds": 1.780001912266016e-05,
       "scores": [
         {
           "scorer": "risk_score",
@@ -144,6 +148,7 @@
           "HIGH_VALUE_INTERNATIONAL"
         ]
       },
+      "latency_seconds": 1.6000005416572094e-05,
       "scores": [
         {
           "scorer": "risk_score",

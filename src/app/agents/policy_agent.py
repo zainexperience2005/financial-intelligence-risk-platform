@@ -21,8 +21,10 @@ from app.schemas import (
     PolicyAnalysisResult,
     PolicyCitation,
 )
+from app.security.pii import prepare_model_evidence
 from app.tools import CorrectivePolicyRetrievalTool
 from kit.llms import create_chat_model
+from kit.security.pii import mask_free_text
 from kit.tools.adapters import to_langchain_tool
 
 # Hard limit on retrieval attempts to prevent infinite agent loop execution
@@ -47,7 +49,7 @@ def run_policy_agent(
 
     messages: list[BaseMessage] = [
         SystemMessage(content=POLICY_AGENT_SYSTEM_PROMPT),
-        HumanMessage(content=question),
+        HumanMessage(content=mask_free_text(question)),
     ]
 
     retrieved_chunks: list[dict] = []
@@ -138,7 +140,13 @@ def run_policy_agent(
 
             messages.append(
                 ToolMessage(
-                    content=str(observation),
+                    content=mask_free_text(
+                        str(
+                            prepare_model_evidence(observation)
+                            if isinstance(observation, dict)
+                            else observation
+                        )
+                    ),
                     tool_call_id=tool_call["id"],
                 )
             )

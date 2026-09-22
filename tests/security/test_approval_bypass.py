@@ -4,8 +4,10 @@ import pytest
 from sqlalchemy import select
 
 from app.actions.freeze_account import freeze_account
+from app.audit.events import AuditEventType
 from app.core.exceptions import ActionNotAllowedError
 from app.db.models import Account
+from app.db.repositories.audit import find_by_event_type
 from app.schemas import ProposedAction
 from app.services.actions import ActionService
 from app.services.approvals import reject_action, request_action_approval
@@ -23,19 +25,24 @@ def test_freeze_without_approval_fails(action_service: ActionService):
         )
     assert "Valid approval is required" in str(exc_info.value)
 
-    # Verify directly via freeze_account
-    direct_res = freeze_account(
-        account_id="ACC-1001",
-        approval_id="fake-approval-uuid-666",
-        actor="attacker@evil.corp",
-    )
-    assert direct_res.success is False
+    # Verify directly via freeze_account raises ActionNotAllowedError
+    with pytest.raises(ActionNotAllowedError):
+        freeze_account(
+            account_id="ACC-1001",
+            approval_id="fake-approval-uuid-666",
+            actor="attacker@evil.corp",
+        )
 
-    # Verify database state was not modified
+    # Verify database state was not modified and denial was audited
     with SessionFactory() as session:
         acc = session.scalar(select(Account).where(Account.account_id == "ACC-1001"))
         assert acc is not None
         assert acc.status == "active"
+
+        denials = find_by_event_type(session, AuditEventType.ACTION_EXECUTION_DENIED)
+        assert len(denials) >= 2
+        assert denials[-1].details.get("reason_code") == "approval_not_found"
+        assert denials[-1].details.get("action") == "freeze_account"
 
 
 def test_pending_approval_cannot_execute(action_service: ActionService):
@@ -58,11 +65,15 @@ def test_pending_approval_cannot_execute(action_service: ActionService):
         )
     assert "Action has not been approved" in str(exc_info.value)
 
-    # Verify database state
+    # Verify database state and denial audit
     with SessionFactory() as session:
         acc = session.scalar(select(Account).where(Account.account_id == "ACC-1001"))
         assert acc is not None
         assert acc.status == "active"
+
+        denials = find_by_event_type(session, AuditEventType.ACTION_EXECUTION_DENIED)
+        assert len(denials) >= 1
+        assert denials[-1].details.get("reason_code") == "approval_pending"
 
 
 def test_rejected_approval_cannot_execute(action_service: ActionService):
@@ -93,3 +104,7 @@ def test_rejected_approval_cannot_execute(action_service: ActionService):
         acc = session.scalar(select(Account).where(Account.account_id == "ACC-1001"))
         assert acc is not None
         assert acc.status == "active"
+
+        denials = find_by_event_type(session, AuditEventType.ACTION_EXECUTION_DENIED)
+        assert len(denials) >= 1
+        assert denials[-1].details.get("reason_code") == "approval_rejected"

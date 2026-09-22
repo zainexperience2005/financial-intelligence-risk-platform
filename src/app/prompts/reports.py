@@ -39,4 +39,21 @@ Rules:
 
 12. Keep the report concise and useful to a financial
     analyst.
+
+13. Chart artifacts are visual representations of verified
+    analytics results. Do not infer numeric values that are
+    not present in the supplied analytics evidence.
+
+14. Do not claim that a chart was generated unless chart
+    artifact metadata is present in the evidence.
+
+15. Historical memory must be clearly distinguished from
+    current verified evidence.
+
+16. If memory conflicts with current database or policy
+    evidence, prefer the current verified evidence.
+
+17. Do not present remembered historical information as a
+    current fact unless it is independently supported by
+    current evidence.
 """.strip()

@@ -1,62 +1,20 @@
 # Architecture
 
-## Core Principle
+The repository follows a reusable-kit/domain-application architecture.
 
-This repository contains two major Python packages:
+```text
+src/app -> src/kit
+```
 
-### `src/kit`
+`src/kit` contains reusable Agentic AI infrastructure.
 
-Reusable, domain-independent Agentic AI infrastructure.
+`src/app` contains Financial Intelligence & Risk Platform domain logic.
 
-Examples:
+The kit must never import the application.
 
-- LLM providers
-- embeddings
-- vector stores
-- tools
-- RAG
-- CRAG
-- memory
-- LangGraph utilities
-- MCP
-- loop engineering
-- evaluation
-- observability
-- security
-- approval workflows
+## Documentation
 
-### `src/app`
-
-Financial Intelligence & Risk Platform business logic.
-
-Examples:
-
-- financial agents
-- transaction analysis
-- risk rules
-- financial database models
-- finance-specific prompts
-- financial workflows
-
-## Dependency Rule
-
-Allowed:
-
-app -> kit
-
-Forbidden:
-
-kit -> app
-
-The kit must never depend on Financial Intelligence
-application code.
-
-## Reusability Rule
-
-Before adding code to kit, ask:
-
-"Could another unrelated Agentic AI application use this?"
-
-If yes, it may belong in kit.
-
-If no, it belongs in app.
+- [Full system architecture](docs/architecture/system.md)
+- [Investigation data flow](docs/architecture/data-flow.md)
+- [Security architecture](docs/architecture/security.md)
+- [Architecture decisions](docs/adr/)

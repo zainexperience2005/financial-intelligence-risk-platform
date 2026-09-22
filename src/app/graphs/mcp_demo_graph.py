@@ -15,6 +15,7 @@ from langgraph.graph.message import (
 from langgraph.prebuilt import ToolNode
 from typing_extensions import TypedDict
 
+from app.security.pii import prepare_model_text
 from kit.llms import create_chat_model
 from kit.mcp.client import MCPClient
 from kit.mcp.langchain import (
@@ -40,7 +41,14 @@ async def build_mcp_demo_graph(mcp_target: Any):
                     "Never invent tool results."
                 )
             ),
-            *state["messages"],
+            *(
+                message.model_copy(
+                    update={"content": prepare_model_text(message.content)}
+                )
+                if isinstance(message.content, str)
+                else message
+                for message in state["messages"]
+            ),
         ]
         response = await model.ainvoke(messages)
         return {"messages": [response]}

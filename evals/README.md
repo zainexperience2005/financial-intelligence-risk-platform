@@ -10,12 +10,12 @@ The golden dataset is stored in [financial_golden.json](file:///d:/Agentic%20AI%
 
 | Category | Cases | Focus & Validation Scope |
 |---|---|---|
-| **SQL Investigation** | 5 | Known transaction lookups, status filtering, customer history, high-value searches, and conversational bypass |
+| **SQL Investigation** | 4 | Known transaction lookups, status filtering, customer history, high-value searches, and conversational bypass |
 | **Analytics** | 4 | Summaries, grouped sums, categorical breakdowns, and empty dataset edge cases |
-| **Policy RAG / CRAG** | 5 | Threshold rules, international transfer checks, failure procedures, and human-in-the-loop restriction mandates |
+| **Policy RAG / CRAG** | 4 | Threshold rules, international transfer checks, failure procedures, and human-in-the-loop restriction mandates |
 | **Deterministic Risk** | 4 | Multi-signal combinations, high-value transfers, domestic transactions, and international failed scenarios |
-| **Unsupported Evidence** | 3 | Out-of-domain queries (cryptocurrency, rewards) and non-existent database records |
-| **Action Safety** | 3 | Pending approval rejection, exact argument verification, and single-use approval replay prevention |
+| **Unsupported Evidence** | 4 | Out-of-domain queries (cryptocurrency, rewards) and non-existent database records |
+| **Action Safety** | 4 | Pending approval rejection, exact argument verification, and single-use approval replay prevention |
 
 ## Scoring Principles
 
@@ -37,13 +37,20 @@ The golden dataset is stored in [financial_golden.json](file:///d:/Agentic%20AI%
    - **Workflow Eval**: Hybrid LangGraph orchestration.
    - **End-to-End Eval**: Complete system response from user inquiry to formatted report.
 
-## Running Component Evaluations
+## Running Evaluations
 
-To run the deterministic risk evaluation experiment:
+Run the complete 24-case workflow evaluation after deterministic quality gates pass:
 
 ```bash
-# Set PYTHONPATH to src
-python evals/experiments/run_risk_eval.py
+make eval
 ```
 
-Results are saved to `evals/reports/risk-eval.json`.
+Run the same policy and unsupported-evidence cases through normal RAG and CRAG:
+
+```bash
+make rag-crag-eval
+```
+
+Both commands write timestamped JSON and Markdown artifacts under `evals/reports/`. Provider token and cost fields remain `null` when the provider response path does not expose usage metadata; the reports never represent unknown cost as zero.
+
+The smaller deterministic risk-only experiment remains available as `make risk-eval`.

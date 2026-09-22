@@ -17,6 +17,7 @@ from app.schemas import (
     PolicyAnalysisResult,
     RiskAnalysisResult,
 )
+from app.security.pii import prepare_model_evidence
 from kit.llms import create_chat_model
 
 
@@ -58,6 +59,8 @@ def run_risk_agent(
         "policy_grounded": policy_grounded,
     }
 
+    safe_evidence = prepare_model_evidence(evidence)
+
     response = model.invoke(
         [
             SystemMessage(content=RISK_AGENT_SYSTEM_PROMPT),
@@ -66,7 +69,7 @@ def run_risk_agent(
                     "Explain this risk assessment "
                     "using only the supplied evidence.\n\n"
                     + json.dumps(
-                        evidence,
+                        safe_evidence,
                         indent=2,
                         default=str,
                     )

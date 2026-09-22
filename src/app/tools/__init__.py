@@ -1,3 +1,7 @@
+from app.tools.charting import (
+    ChartInput,
+    ChartTool,
+)
 from app.tools.corrective_policy_retrieval import (
     CorrectivePolicyRetrievalInput,
     CorrectivePolicyRetrievalTool,
@@ -24,6 +28,8 @@ from app.tools.schema_inspector import (
 )
 
 __all__ = [
+    "ChartInput",
+    "ChartTool",
     "SchemaInspectorInput",
     "SchemaInspectorTool",
     "SafeSQLInput",

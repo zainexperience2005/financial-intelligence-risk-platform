@@ -1,0 +1,412 @@
+{
+  "generated_at": "2026-09-22T08:24:06.502169+00:00",
+  "git_sha": "046cad7",
+  "dataset_version": "1.0",
+  "case_count": 8,
+  "summary": {
+    "normal_rag": {
+      "passed": 4,
+      "total": 8,
+      "pass_rate_pct": 50.0,
+      "source_recall_pct": 100.0,
+      "grounding_pct": 57.14,
+      "unsupported_refusal_pct": 0.0,
+      "average_retrieval_attempts": 1.0,
+      "average_latency_seconds": 0.8115203250054037,
+      "median_latency_seconds": 0.6405071999906795,
+      "token_usage": null,
+      "estimated_cost_usd": null
+    },
+    "crag": {
+      "passed": 7,
+      "total": 8,
+      "pass_rate_pct": 87.5,
+      "source_recall_pct": 100.0,
+      "grounding_pct": 100.0,
+      "unsupported_refusal_pct": 100.0,
+      "average_retrieval_attempts": 1.5,
+      "average_latency_seconds": 3.650268400004279,
+      "median_latency_seconds": 3.533489000008558,
+      "token_usage": null,
+      "estimated_cost_usd": null
+    }
+  },
+  "results": [
+    {
+      "case_id": "UNS-004",
+      "category": "unsupported",
+      "mode": "normal_rag",
+      "passed": false,
+      "source_correct": null,
+      "unsupported_refusal_correct": false,
+      "expected_sources": [],
+      "actual_sources": [
+        "account_restrictions.md",
+        "failed_transactions.md",
+        "transaction_monitoring.md"
+      ],
+      "answerable": true,
+      "retrieval_attempts": 1,
+      "correction_used": false,
+      "relevance": null,
+      "latency_seconds": 1.8341530000034254,
+      "input_tokens": null,
+      "output_tokens": null,
+      "estimated_cost_usd": null,
+      "error": null,
+      "grounding_correct": false
+    },
+    {
+      "case_id": "UNS-004",
+      "category": "unsupported",
+      "mode": "crag",
+      "passed": true,
+      "source_correct": null,
+      "unsupported_refusal_correct": true,
+      "expected_sources": [],
+      "actual_sources": [],
+      "answerable": false,
+      "retrieval_attempts": 2,
+      "correction_used": true,
+      "relevance": "irrelevant",
+      "latency_seconds": 5.352279099985026,
+      "input_tokens": null,
+      "output_tokens": null,
+      "estimated_cost_usd": null,
+      "error": null,
+      "grounding_correct": true
+    },
+    {
+      "case_id": "POL-001",
+      "category": "policy",
+      "mode": "normal_rag",
+      "passed": true,
+      "source_correct": true,
+      "unsupported_refusal_correct": null,
+      "expected_sources": [
+        "account_restrictions.md"
+      ],
+      "actual_sources": [
+        "account_restrictions.md",
+        "failed_transactions.md",
+        "transaction_monitoring.md"
+      ],
+      "answerable": true,
+      "retrieval_attempts": 1,
+      "correction_used": false,
+      "relevance": null,
+      "latency_seconds": 0.622039500012761,
+      "input_tokens": null,
+      "output_tokens": null,
+      "estimated_cost_usd": null,
+      "error": null,
+      "grounding_correct": true
+    },
+    {
+      "case_id": "POL-001",
+      "category": "policy",
+      "mode": "crag",
+      "passed": true,
+      "source_correct": true,
+      "unsupported_refusal_correct": null,
+      "expected_sources": [
+        "account_restrictions.md"
+      ],
+      "actual_sources": [
+        "account_restrictions.md"
+      ],
+      "answerable": true,
+      "retrieval_attempts": 1,
+      "correction_used": false,
+      "relevance": "relevant",
+      "latency_seconds": 2.2919954000099096,
+      "input_tokens": null,
+      "output_tokens": null,
+      "estimated_cost_usd": null,
+      "error": null,
+      "grounding_correct": true
+    },
+    {
+      "case_id": "POL-002",
+      "category": "policy",
+      "mode": "normal_rag",
+      "passed": true,
+      "source_correct": true,
+      "unsupported_refusal_correct": null,
+      "expected_sources": [
+        "transaction_monitoring.md"
+      ],
+      "actual_sources": [
+        "account_restrictions.md",
+        "failed_transactions.md",
+        "transaction_monitoring.md"
+      ],
+      "answerable": true,
+      "retrieval_attempts": 1,
+      "correction_used": false,
+      "relevance": null,
+      "latency_seconds": 0.7812329000153113,
+      "input_tokens": null,
+      "output_tokens": null,
+      "estimated_cost_usd": null,
+      "error": null,
+      "grounding_correct": true
+    },
+    {
+      "case_id": "POL-002",
+      "category": "policy",
+      "mode": "crag",
+      "passed": true,
+      "source_correct": true,
+      "unsupported_refusal_correct": null,
+      "expected_sources": [
+        "transaction_monitoring.md"
+      ],
+      "actual_sources": [
+        "transaction_monitoring.md"
+      ],
+      "answerable": true,
+      "retrieval_attempts": 1,
+      "correction_used": false,
+      "relevance": "relevant",
+      "latency_seconds": 2.1223368999781087,
+      "input_tokens": null,
+      "output_tokens": null,
+      "estimated_cost_usd": null,
+      "error": null,
+      "grounding_correct": true
+    },
+    {
+      "case_id": "POL-003",
+      "category": "policy",
+      "mode": "normal_rag",
+      "passed": true,
+      "source_correct": true,
+      "unsupported_refusal_correct": null,
+      "expected_sources": [
+        "transaction_monitoring.md"
+      ],
+      "actual_sources": [
+        "account_restrictions.md",
+        "failed_transactions.md",
+        "transaction_monitoring.md"
+      ],
+      "answerable": true,
+      "retrieval_attempts": 1,
+      "correction_used": false,
+      "relevance": null,
+      "latency_seconds": 0.6281775000097696,
+      "input_tokens": null,
+      "output_tokens": null,
+      "estimated_cost_usd": null,
+      "error": null,
+      "grounding_correct": true
+    },
+    {
+      "case_id": "POL-003",
+      "category": "policy",
+      "mode": "crag",
+      "passed": true,
+      "source_correct": true,
+      "unsupported_refusal_correct": null,
+      "expected_sources": [
+        "transaction_monitoring.md"
+      ],
+      "actual_sources": [
+        "transaction_monitoring.md"
+      ],
+      "answerable": true,
+      "retrieval_attempts": 1,
+      "correction_used": false,
+      "relevance": "relevant",
+      "latency_seconds": 1.9184142000158317,
+      "input_tokens": null,
+      "output_tokens": null,
+      "estimated_cost_usd": null,
+      "error": null,
+      "grounding_correct": true
+    },
+    {
+      "case_id": "POL-004",
+      "category": "policy",
+      "mode": "normal_rag",
+      "passed": true,
+      "source_correct": true,
+      "unsupported_refusal_correct": null,
+      "expected_sources": [
+        "failed_transactions.md"
+      ],
+      "actual_sources": [
+        "account_restrictions.md",
+        "failed_transactions.md",
+        "transaction_monitoring.md"
+      ],
+      "answerable": true,
+      "retrieval_attempts": 1,
+      "correction_used": false,
+      "relevance": null,
+      "latency_seconds": 0.6402707999804989,
+      "input_tokens": null,
+      "output_tokens": null,
+      "estimated_cost_usd": null,
+      "error": null,
+      "grounding_correct": true
+    },
+    {
+      "case_id": "POL-004",
+      "category": "policy",
+      "mode": "crag",
+      "passed": true,
+      "source_correct": true,
+      "unsupported_refusal_correct": null,
+      "expected_sources": [
+        "failed_transactions.md"
+      ],
+      "actual_sources": [
+        "failed_transactions.md"
+      ],
+      "answerable": true,
+      "retrieval_attempts": 1,
+      "correction_used": false,
+      "relevance": "relevant",
+      "latency_seconds": 2.035409600008279,
+      "input_tokens": null,
+      "output_tokens": null,
+      "estimated_cost_usd": null,
+      "error": null,
+      "grounding_correct": true
+    },
+    {
+      "case_id": "UNS-001",
+      "category": "unsupported",
+      "mode": "normal_rag",
+      "passed": false,
+      "source_correct": null,
+      "unsupported_refusal_correct": false,
+      "expected_sources": [],
+      "actual_sources": [
+        "account_restrictions.md",
+        "failed_transactions.md",
+        "transaction_monitoring.md"
+      ],
+      "answerable": true,
+      "retrieval_attempts": 1,
+      "correction_used": false,
+      "relevance": null,
+      "latency_seconds": 0.7380012000212446,
+      "input_tokens": null,
+      "output_tokens": null,
+      "estimated_cost_usd": null,
+      "error": null,
+      "grounding_correct": false
+    },
+    {
+      "case_id": "UNS-001",
+      "category": "unsupported",
+      "mode": "crag",
+      "passed": true,
+      "source_correct": null,
+      "unsupported_refusal_correct": true,
+      "expected_sources": [],
+      "actual_sources": [],
+      "answerable": false,
+      "retrieval_attempts": 2,
+      "correction_used": true,
+      "relevance": "irrelevant",
+      "latency_seconds": 4.774982600007206,
+      "input_tokens": null,
+      "output_tokens": null,
+      "estimated_cost_usd": null,
+      "error": null,
+      "grounding_correct": true
+    },
+    {
+      "case_id": "UNS-002",
+      "category": "unsupported",
+      "mode": "normal_rag",
+      "passed": false,
+      "source_correct": null,
+      "unsupported_refusal_correct": false,
+      "expected_sources": [],
+      "actual_sources": [
+        "account_restrictions.md",
+        "failed_transactions.md",
+        "transaction_monitoring.md"
+      ],
+      "answerable": true,
+      "retrieval_attempts": 1,
+      "correction_used": false,
+      "relevance": null,
+      "latency_seconds": 0.6075440999993589,
+      "input_tokens": null,
+      "output_tokens": null,
+      "estimated_cost_usd": null,
+      "error": null,
+      "grounding_correct": false
+    },
+    {
+      "case_id": "UNS-002",
+      "category": "unsupported",
+      "mode": "crag",
+      "passed": true,
+      "source_correct": null,
+      "unsupported_refusal_correct": true,
+      "expected_sources": [],
+      "actual_sources": [],
+      "answerable": false,
+      "retrieval_attempts": 2,
+      "correction_used": true,
+      "relevance": "irrelevant",
+      "latency_seconds": 4.85275650001131,
+      "input_tokens": null,
+      "output_tokens": null,
+      "estimated_cost_usd": null,
+      "error": null,
+      "grounding_correct": true
+    },
+    {
+      "case_id": "UNS-003",
+      "category": "unsupported",
+      "mode": "normal_rag",
+      "passed": false,
+      "source_correct": null,
+      "unsupported_refusal_correct": null,
+      "expected_sources": [],
+      "actual_sources": [
+        "account_restrictions.md",
+        "failed_transactions.md",
+        "transaction_monitoring.md"
+      ],
+      "answerable": true,
+      "retrieval_attempts": 1,
+      "correction_used": false,
+      "relevance": null,
+      "latency_seconds": 0.6407436000008602,
+      "input_tokens": null,
+      "output_tokens": null,
+      "estimated_cost_usd": null,
+      "error": null,
+      "grounding_correct": null
+    },
+    {
+      "case_id": "UNS-003",
+      "category": "unsupported",
+      "mode": "crag",
+      "passed": false,
+      "source_correct": null,
+      "unsupported_refusal_correct": null,
+      "expected_sources": [],
+      "actual_sources": [],
+      "answerable": false,
+      "retrieval_attempts": 2,
+      "correction_used": true,
+      "relevance": "irrelevant",
+      "latency_seconds": 5.853972900018562,
+      "input_tokens": null,
+      "output_tokens": null,
+      "estimated_cost_usd": null,
+      "error": null,
+      "grounding_correct": null
+    }
+  ]
+}

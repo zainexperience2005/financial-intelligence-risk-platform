@@ -25,11 +25,11 @@ pythonpath = ["src"]
 testpaths = ["tests"]
 addopts = "--import-mode=importlib --strict-markers"
 markers = [
-    "integration: requires infrastructure",
+    "integration: requires external infrastructure",
     "llm: requires an external LLM provider",
     "qdrant: requires Qdrant",
-    "mcp: MCP integration test",
-    "e2e: end-to-end system test",
+    "mcp: MCP integration tests",
+    "e2e: full end-to-end workflow tests",
     "postgres: requires an explicitly configured PostgreSQL test database",
 ]
 
@@ -46,3 +46,6 @@ extraPaths = ["src"]
 [tool.ruff.lint.per-file-ignores]
 # Preserve the existing runtime generic interface during this cleanup.
 "src/kit/tools/base.py" = ["UP046"]
+# Scripts manipulate sys.path before imports to work without pip install -e .
+"scripts/*.py" = ["E402"]
+"evals/experiments/*.py" = ["E402"]

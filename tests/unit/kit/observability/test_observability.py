@@ -99,3 +99,19 @@ async def test_langsmith_experiment_runner_offline_run():
 
     assert results[1].case_id == "TEST-002"
     assert results[1].scores[0].passed is True
+
+
+def test_sanitize_metadata_masks_pii():
+    clean = sanitize_metadata(
+        {
+            "customer_name": "Ali Khan",
+            "email": "ali@example.com",
+            "phone": "+92 300 1234567",
+            "transaction_id": "TX-1006",
+        }
+    )
+
+    assert clean["customer_name"] == "[PERSON_NAME]"
+    assert clean["email"] == "[EMAIL]"
+    assert clean["phone"] == "[PHONE]"
+    assert clean["transaction_id"] == "TX-1006"

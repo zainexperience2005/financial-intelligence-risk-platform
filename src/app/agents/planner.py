@@ -2,6 +2,7 @@ from app.prompts import PLANNER_SYSTEM_PROMPT
 from app.schemas import InvestigationPlan
 from kit.llms import create_chat_model
 from kit.prompts import create_chat_prompt
+from kit.security.pii import mask_free_text
 
 
 def create_investigation_plan(
@@ -24,7 +25,7 @@ def create_investigation_plan(
 
     return chain.invoke(
         {
-            "question": question,
-            "conversation_context": conversation_context or "None",
+            "question": mask_free_text(question),
+            "conversation_context": mask_free_text(conversation_context or "None"),
         }
     )

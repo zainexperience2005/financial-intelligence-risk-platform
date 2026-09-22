@@ -71,14 +71,23 @@ The system must prevent:
 
 ---
 
+### Guardrail 7: Denied Action Auditing & Fail-Closed Protection
+- **Decoupled Denial Persistence**: When an action execution attempt fails validation (e.g. approval missing, pending, rejected, replayed, or argument mismatched), the action transaction is rolled back and the denial is recorded in an independent database transaction.
+- **Fail-Closed Authorization**: If recording the denial audit fails due to a database exception, the action remains strictly denied and the exception is logged internally.
+- **Atomic Success Enforcement**: If recording the authoritative success audit fails during valid execution, the state mutation and approval consumption must roll back atomically.
+- **Sanitized Audit Details**: All arguments recorded in denial audit events pass through recursive redaction (`redact_mapping`) to eliminate credentials or sensitive tokens.
+
+---
+
 ## Threat Matrix
 
 | Threat | Primary Control | Secondary Control | Test Suite |
 |---|---|---|---|
 | **SQL Mutation** | AST validator (`sqlglot`) | Read-only DB role (`financial_reader`) | `tests/security/test_sql_attacks.py` |
-| **Approval Bypass** | Approval status check (`approved`) | ActionService permission enforcement | `tests/security/test_approval_bypass.py` |
-| **Approval Replay** | Single-use `executed` state | Row-level locking (`FOR UPDATE`) | `tests/security/test_approval_replay.py` |
-| **Argument Substitution** | Exact argument dictionary match | Single-use consumption & audit log | `tests/security/test_argument_substitution.py` |
+| **Approval Bypass** | Approval status check (`approved`) | ActionService permission enforcement & denial audit | `tests/security/test_approval_bypass.py` |
+| **Approval Replay** | Single-use `executed` state | Row-level locking (`FOR UPDATE`) & denial audit | `tests/security/test_approval_replay.py` |
+| **Argument Substitution** | Exact argument dictionary match | Single-use consumption & denial audit | `tests/security/test_argument_substitution.py` |
+| **Covert Action Probing** | Independent denial audit transaction | Reason code tracking (`ACTION_EXECUTION_DENIED`) | `tests/security/test_denied_action_audit.py` |
 | **Prompt Injection** | Untrusted data boundary in prompts | Complete lack of autonomous mutation tools | `tests/security/test_prompt_injection.py` |
 | **Infinite Agent Loop** | `LoopController` repetition guard | LangGraph recursion limits | `tests/security/test_tool_abuse.py` |
 | **Cost & Token Exhaustion** | Fail-closed token & cost budget ceilings | Hard iteration and tool budgets | `tests/security/test_resource_limits.py` |
@@ -86,3 +95,21 @@ The system must prevent:
 | **MCP Capability Abuse** | Strict tool allowlist (no mutation tools) | Delegation to internal SafeSQL boundary | `tests/security/test_mcp_security.py` |
 | **Secret Leakage** | `redact_mapping` & `sanitize_metadata` | Trace minimization & non-root container | `tests/security/test_secret_leakage.py` |
 | **Fabricated Action Claims** | Semantic `GroundingJudge` | Authoritative PostgreSQL audit trail | `tests/unit/app/evaluation/test_judges.py` |
+## PII Exposure
+
+### Threat
+
+Customer-identifying information may leak through model prompts, application logs, traces, or retrieved evidence.
+
+### Controls
+
+- Structured PII classification and deterministic masking before model boundaries.
+- Free-text email and phone masking as defense in depth.
+- Financial-domain field classification kept in `src/app/security`.
+- Trace metadata sanitization and minimal structured logging metadata.
+- Security regression tests covering model, trace, and log preparation boundaries.
+- Authoritative database rows remain unchanged inside the trusted application boundary.
+
+### Residual Risk
+
+Free-text PII detection is imperfect. Person names and internal identifiers cannot be classified reliably from arbitrary text by generic regular expressions. Structured data should therefore be masked using known field semantics whenever possible, and new model, trace, or logging paths must use the established boundary helpers.

@@ -13,11 +13,13 @@ from app.prompts.sql_analyst import (
     SQL_ANALYST_SYSTEM_PROMPT,
 )
 from app.schemas import SQLAnalysisResult
+from app.security.pii import prepare_model_evidence
 from app.tools import (
     SafeSQLTool,
     SchemaInspectorTool,
 )
 from kit.llms import create_chat_model
+from kit.security.pii import mask_free_text
 from kit.tools.adapters import to_langchain_tool
 
 MAX_TOOL_ITERATIONS = 6
@@ -45,7 +47,7 @@ def run_sql_analyst(
 
     messages: list[BaseMessage] = [
         SystemMessage(content=SQL_ANALYST_SYSTEM_PROMPT),
-        HumanMessage(content=question),
+        HumanMessage(content=mask_free_text(question)),
     ]
 
     for _ in range(MAX_TOOL_ITERATIONS):
@@ -164,10 +166,15 @@ def run_sql_analyst(
                         "error": (f"Tool execution failed: {type(exc).__name__}"),
                     }
 
-            content = (
-                json.dumps(observation, default=str)
+            model_observation = (
+                prepare_model_evidence(observation)
                 if isinstance(observation, dict)
-                else str(observation)
+                else observation
+            )
+            content = (
+                json.dumps(model_observation, default=str)
+                if isinstance(model_observation, dict)
+                else mask_free_text(str(model_observation))
             )
 
             messages.append(

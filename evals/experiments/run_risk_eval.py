@@ -3,6 +3,7 @@
 import json
 from decimal import Decimal
 from pathlib import Path
+from time import perf_counter
 from typing import Any
 
 from app.evaluation.scorers import score_risk_assessment
@@ -23,6 +24,7 @@ def run_risk_evaluation() -> dict[str, Any]:
 
     for case in risk_cases:
         tx = case["input"]["transaction"]
+        started_at = perf_counter()
         actual = assess_transaction_risk(
             amount=Decimal(str(tx["amount"])),
             status=str(tx["status"]),
@@ -30,6 +32,8 @@ def run_risk_evaluation() -> dict[str, Any]:
             destination_country=tx.get("destination_country"),
             customer_country=case["input"]["customer_country"],
         )
+
+        latency_seconds = perf_counter() - started_at
 
         scores = score_risk_assessment(
             actual=actual,
@@ -53,6 +57,7 @@ def run_risk_evaluation() -> dict[str, Any]:
                     "signals": [sig.code for sig in actual.signals],
                 },
                 "expected": case["expected"],
+                "latency_seconds": latency_seconds,
                 "scores": [s.model_dump() for s in scores],
                 "all_passed": all(s.passed for s in scores),
             }
@@ -64,6 +69,7 @@ def run_risk_evaluation() -> dict[str, Any]:
         "passed_cases": sum(1 for r in results if r["all_passed"]),
         "total_checks": total_checks,
         "passed_checks": passed_checks,
+        "latency_seconds": sum(result["latency_seconds"] for result in results),
         "accuracy_pct": round((passed_checks / total_checks) * 100, 2)
         if total_checks > 0
         else 0.0,

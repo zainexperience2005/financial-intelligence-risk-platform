@@ -4,8 +4,10 @@ import pytest
 from sqlalchemy import func, select
 
 from app.actions.freeze_account import freeze_account
+from app.audit.events import AuditEventType
 from app.core.exceptions import ActionNotAllowedError
 from app.db.models import ApprovalRecord, AuditEvent
+from app.db.repositories.audit import find_by_event_type
 from app.schemas import ProposedAction
 from app.services.actions import ActionService
 from app.services.approvals import approve_action, request_action_approval
@@ -57,7 +59,7 @@ def test_approval_cannot_be_replayed_sequentially(action_service: ActionService)
         )
     assert "Action has not been approved" in str(exc_info.value)
 
-    # 4. Verify only one successful action execution was recorded in audit trail
+    # 4. Verify only one successful action execution and denial audited
     with SessionFactory() as session:
         exec_count = session.scalar(
             select(func.count(AuditEvent.id)).where(
@@ -65,6 +67,10 @@ def test_approval_cannot_be_replayed_sequentially(action_service: ActionService)
             )
         )
         assert exec_count == 1
+
+        denials = find_by_event_type(session, AuditEventType.ACTION_EXECUTION_DENIED)
+        assert len(denials) >= 1
+        assert denials[-1].details.get("reason_code") == "approval_already_executed"
 
 
 def test_direct_freeze_account_fails_on_replayed_approval():
@@ -90,11 +96,16 @@ def test_direct_freeze_account_fails_on_replayed_approval():
     )
     assert res1.success is True
 
-    # Replay call fails
-    res2 = freeze_account(
-        account_id="ACC-1001",
-        approval_id=approval_id,
-        actor="replay_attacker@example.com",
-    )
-    assert res2.success is False
-    assert "Action has not been approved" in res2.message
+    # Replay call fails and is audited
+    with pytest.raises(ActionNotAllowedError) as exc_info:
+        freeze_account(
+            account_id="ACC-1001",
+            approval_id=approval_id,
+            actor="replay_attacker@example.com",
+        )
+    assert "Action has not been approved" in str(exc_info.value)
+
+    with SessionFactory() as session:
+        denials = find_by_event_type(session, AuditEventType.ACTION_EXECUTION_DENIED)
+        assert len(denials) >= 1
+        assert denials[-1].details.get("reason_code") == "approval_already_executed"

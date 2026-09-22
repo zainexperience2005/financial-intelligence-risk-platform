@@ -24,6 +24,15 @@ def build_evidence_bundle(
 
     if data_analysis:
         evidence["analytics"] = data_analysis.model_dump(mode="json")
+        if data_analysis.chart:
+            evidence["chart"] = {
+                "filename": data_analysis.chart.filename,
+                "chart_type": data_analysis.chart.chart_type,
+                "title": data_analysis.chart.title,
+                "data_points": data_analysis.chart.data_points,
+                "truncated": data_analysis.chart.truncated,
+            }
+
 
     policy_analysis = state.get("policy_analysis")
 

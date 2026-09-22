@@ -6,6 +6,9 @@ from app.api.routes.actions import (
 from app.api.routes.approvals import (
     router as approvals_router,
 )
+from app.api.routes.charts import (
+    router as charts_router,
+)
 from app.api.routes.health import (
     router as health_router,
 )
@@ -36,4 +39,8 @@ api_router.include_router(
 
 api_router.include_router(
     memory_router,
+)
+
+api_router.include_router(
+    charts_router,
 )

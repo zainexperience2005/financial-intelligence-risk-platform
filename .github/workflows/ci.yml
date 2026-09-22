@@ -42,7 +42,15 @@ jobs:
         run: |
           pytest tests/unit -v
 
-      - name: Security regression tests
+      - name: Validate evaluation dataset
+        run: |
+          pytest tests/unit/app/evaluation/test_golden_dataset.py -v
+
+      - name: Run deterministic evaluations
+        run: |
+          PYTHONPATH=src python evals/experiments/run_risk_eval.py
+
+      - name: Security tests
         run: |
           pytest tests/security -v
 
@@ -73,6 +81,7 @@ jobs:
 
     env:
       APP_ENV: test
+      PYTEST_USE_EXTERNAL_SERVICES: "1"
       DATABASE_URL: >-
         postgresql+psycopg://financial_app:test_password@localhost:5432/financial_test
       READONLY_DATABASE_URL: >-
@@ -98,9 +107,19 @@ jobs:
         run: |
           alembic upgrade head
 
-      - name: Run database integration tests
+      - name: Configure read-only database role
+        env:
+          PGPASSWORD: test_password
         run: |
-          pytest tests/integration/database -v
+          psql -h localhost -U financial_app -d financial_test -c "CREATE ROLE financial_reader LOGIN PASSWORD 'reader_test_password';"
+          python scripts/setup_readonly_role.py
+
+      - name: Run integration tests
+        env:
+          READONLY_DATABASE_URL: >-
+            postgresql+psycopg://financial_reader:reader_test_password@localhost:5432/financial_test
+        run: |
+          pytest -m integration -v
 
   docker-build:
     name: Docker Build

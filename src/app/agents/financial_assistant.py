@@ -2,6 +2,7 @@ from app.prompts import FINANCIAL_ASSISTANT_SYSTEM_PROMPT
 from app.schemas import FinancialAnalysis
 from kit.llms import create_chat_model
 from kit.prompts import create_chat_prompt
+from kit.security.pii import mask_free_text
 
 
 def ask_financial_assistant(
@@ -31,7 +32,7 @@ def ask_financial_assistant(
 
     result = chain.invoke(
         {
-            "question": question,
+            "question": mask_free_text(question),
         }
     )
 

@@ -6,49 +6,20 @@ Accepted
 
 ## Context
 
-The Financial Intelligence & Risk Platform requires
-LLM reasoning, SQL analysis, policy retrieval, deterministic
-risk scoring, reporting, approval-controlled actions, memory,
-and MCP-based capabilities.
-
-A fully autonomous ReAct agent would provide flexibility but
-would place too much workflow sequencing under model control.
-
-A fully deterministic workflow would provide control but
-would reduce useful semantic reasoning and planning.
+The platform needs semantic planning, controlled data access, policy retrieval, deterministic analytics and risk scoring, grounded reporting, memory, and approval-controlled operations. A single autonomous agent would place sequencing and too many capabilities under model control, while a completely deterministic pipeline would lose useful semantic interpretation.
 
 ## Decision
 
-Use a hybrid LangGraph architecture.
+Use a hybrid Planner/Specialist LangGraph architecture. LLMs perform semantic planning, bounded SQL generation, policy interpretation, and evidence synthesis. Deterministic application code normalizes dependencies, routes the workflow, validates SQL, performs analytics and risk scoring, enforces resource limits and approvals, executes mutations, and records audits.
 
-LLMs are responsible for semantic planning, SQL generation
-within controlled boundaries, policy interpretation, and
-evidence synthesis.
+Specialists receive only the capabilities required for their responsibility. The report agent receives evidence but no operational tools. MCP can deliver capabilities without changing workflow authorization.
 
-Deterministic application code is responsible for workflow
-dependencies, routing constraints, SQL validation, risk
-scoring, approval enforcement, mutations, and auditing.
+## Alternatives Considered
 
-Specialist agents receive only the capabilities required for
-their responsibilities.
-
-MCP may provide capabilities to specialists but does not
-change workflow authorization or safety boundaries.
+- One general-purpose ReAct agent with every tool.
+- A completely deterministic pipeline with no semantic planner.
+- Independent specialists coordinating without a controlling graph.
 
 ## Consequences
 
-Benefits:
-
-- explicit workflow
-- easier testing
-- auditable execution
-- controlled tool access
-- deterministic safety boundaries
-- replaceable specialist implementations
-
-Trade-offs:
-
-- more orchestration code
-- less agent autonomy
-- workflow changes require graph changes
-- more state contracts must be maintained
+The workflow is explicit, testable, auditable, and preserves deterministic safety boundaries. Specialist implementations remain replaceable. The tradeoffs are more orchestration code, less unconstrained autonomy, explicit state contracts, and graph changes when workflow structure changes.

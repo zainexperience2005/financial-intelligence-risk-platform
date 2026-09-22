@@ -4,29 +4,13 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-SENSITIVE_KEYS = {
-    "password",
-    "secret",
-    "api_key",
-    "token",
-    "database_url",
-    "credentials",
-    "private_key",
-}
+from kit.security.pii import mask_mapping
+from kit.security.redaction import redact_mapping
 
 
 def sanitize_metadata(data: dict[str, Any]) -> dict[str, Any]:
-    """Sanitize dictionary to prevent leaking credentials or secrets into traces."""
-    sanitized: dict[str, Any] = {}
-    for key, value in data.items():
-        key_lower = key.lower()
-        if any(sens in key_lower for sens in SENSITIVE_KEYS):
-            sanitized[key] = "[REDACTED]"
-        elif isinstance(value, dict):
-            sanitized[key] = sanitize_metadata(value)
-        else:
-            sanitized[key] = value
-    return sanitized
+    """Remove credential secrets and classified PII before tracing."""
+    return mask_mapping(redact_mapping(data))
 
 
 class TraceMetadata(BaseModel):
@@ -43,7 +27,7 @@ class TraceMetadata(BaseModel):
         *,
         run_name: str | None = None,
     ) -> dict[str, Any]:
-        """Convert trace metadata to a LangChain / LangGraph runnable config dict."""
+        """Convert trace metadata to a sanitized runnable configuration."""
         safe_meta = sanitize_metadata(self.metadata)
         if self.request_id:
             safe_meta["request_id"] = self.request_id

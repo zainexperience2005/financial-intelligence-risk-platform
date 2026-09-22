@@ -2,6 +2,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from kit.charts.models import ChartArtifact
+
 
 class DataAnalysisResult(BaseModel):
     summary: str
@@ -14,3 +16,5 @@ class DataAnalysisResult(BaseModel):
         default=0,
         ge=0,
     )
+
+    chart: ChartArtifact | None = None

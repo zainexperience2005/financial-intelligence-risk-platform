@@ -1,3 +1,6 @@
+from app.tools.charting import (
+    ChartTool,
+)
 from app.tools.data_analysis import (
     DataAnalysisTool,
 )
@@ -16,5 +19,6 @@ def create_tool_registry() -> ToolRegistry:
     registry.register(SchemaInspectorTool())
     registry.register(SafeSQLTool())
     registry.register(DataAnalysisTool())
+    registry.register(ChartTool())
 
     return registry

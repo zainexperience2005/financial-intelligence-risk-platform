@@ -7,13 +7,34 @@ test:
 unit:
 	pytest tests/unit -v
 
-integration:
-	pytest tests/integration -v
+security:
+	pytest tests/security -v
 
-ci:
+integration:
+	pytest -m integration -v
+
+eval:
+	python evals/experiments/run_full_eval.py
+
+rag-crag-eval:
+	python evals/experiments/compare_rag_crag.py
+
+risk-eval:
+	python evals/experiments/run_risk_eval.py
+
+llm-eval:
+	pytest -m llm -v
+
+e2e:
+	pytest -m e2e -v
+
+quality:
 	ruff check src tests
 	ruff format --check src tests
 	pytest tests/unit -v
+	pytest tests/security -v
+
+ci: quality
 
 docker-check:
 	docker build -t financial-platform:test .
@@ -47,4 +68,3 @@ migration-current:
 
 migration-history:
 	alembic history
-

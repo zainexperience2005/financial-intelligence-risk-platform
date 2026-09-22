@@ -1,6 +1,10 @@
 from app.schemas.actions import ActionResult, ProposedAction
 from app.schemas.analysis import FinancialAnalysis
 from app.schemas.data_analysis import DataAnalysisResult
+from app.schemas.memory_context import (
+    InvestigationMemoryContext,
+    MemoryContext,
+)
 from app.schemas.plan import InvestigationPlan
 from app.schemas.policy_analysis import (
     PolicyAnalysisResult,
@@ -27,4 +31,6 @@ __all__ = [
     "EvidenceReference",
     "ProposedAction",
     "ActionResult",
+    "InvestigationMemoryContext",
+    "MemoryContext",
 ]

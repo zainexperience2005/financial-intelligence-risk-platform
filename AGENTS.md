@@ -396,6 +396,34 @@ Services coordinate authorization and transactions.
 LLMs may recommend actions but never receive unrestricted
 database write capabilities.
 
+## Controlled-Action Auditing
+
+Protected action mutations require an approved request bound
+to the exact action and arguments.
+
+Successful action execution, approval consumption, and success
+audit recording must occur in a single atomic database
+transaction.
+
+Denied action execution attempts must record an audit event in
+an independent transaction so that action rollback does not
+discard the security event.
+
+Denied-action auditing must fail closed: if audit persistence
+fails during denial handling, the underlying action remains
+denied.
+
+If authoritative success auditing fails during execution of
+an approved action, the mutation and approval consumption
+must roll back.
+
+Denial audit details must use machine-readable reason codes
+and must be sanitized to avoid persisting secrets or raw
+credentials.
+
+Approval and audit tables must not be exposed to the
+model-generated SQL reader.
+
 ## Short-Term Memory
 
 LangGraph checkpointing provides persistent investigation
@@ -941,4 +969,165 @@ production data during application startup or deployment.
 
 Existing databases may only be stamped to a migration
 revision after their schema has been verified to match that
-revision.
+revision.
+
+
+## Analytics and Chart Artifacts
+
+Charts must be generated from verified structured analytics
+data.
+
+LLMs must not generate or execute arbitrary plotting code.
+
+Numeric calculations must occur before model-facing
+context reduction when full-data calculations are
+required.
+
+The reusable chart layer may render typed chart
+specifications but must not contain finance-specific
+business logic.
+
+Chart filenames and output locations must be controlled by
+the application.
+
+User or model supplied arbitrary filesystem paths are not
+allowed.
+
+Chart truncation must be explicit.
+
+Renderer limits are safety fallbacks and must not replace
+domain-aware aggregation or sampling.
+
+Reports must not claim that a chart exists unless a chart
+artifact was actually generated.
+
+Chart values must remain traceable to deterministic
+analytics evidence.
+
+
+## Long-Term Memory
+
+Long-term memory stores bounded historical context, not
+authoritative current financial state.
+
+Current database evidence takes precedence over remembered
+facts.
+
+Current policy retrieval takes precedence over remembered
+policy interpretations.
+
+Memory persistence must follow an explicit deterministic
+policy.
+
+Do not automatically persist entire conversations, raw SQL
+results, credentials, approval identifiers, or unnecessary
+PII.
+
+Risk-related memories must preserve the ruleset version
+that produced the historical assessment.
+
+Memory retrieval must be bounded and participate in the
+context budget.
+
+Memory should be filtered by known structured identity
+where possible rather than relying only on semantic
+similarity.
+
+Long-term memory must support expiration and deletion.
+
+A vector database is not an authoritative replacement for
+the transactional database or policy corpus.
+
+
+## Reproducibility
+
+A feature is not considered complete if it only works in an
+existing developer environment.
+
+Repository setup must remain reproducible from a clean clone
+using the documented commands in `docs/getting-started.md`.
+
+Setup scripts must be explicit and non-destructive by
+default.
+
+Application startup must not silently migrate schemas, seed
+data, rebuild indexes, or reset state. These are separate
+explicit operations.
+
+Synthetic demo data should be deterministic and idempotently
+seedable. Running `seed_database.py` twice must not duplicate
+data.
+
+New required infrastructure or environment variables must be
+added to `.env.example` and `docs/getting-started.md`.
+
+Changes that affect clean-clone setup must update
+`docs/clean-clone-checklist.md`.
+
+`scripts/verify_setup.py` must remain the authoritative
+environment health check. All 10 checks must pass before
+running the API in a new environment.
+
+The read-only database role (`financial_reader`) must be
+granted SELECT on permitted tables via
+`scripts/setup_readonly_role.py` after migrations. This step
+is separate because grants require tables to exist first.
+
+`scripts/bootstrap.py` must not make paid external API calls.
+Infrastructure bootstrap uses fixed constants (embedding
+dimension) to avoid incurring model costs at setup time.
+## Architecture Discovery
+
+Before making a non-trivial change:
+
+1. Read `ARCHITECTURE.md`.
+2. Read the relevant document under `docs/architecture/`.
+3. Check `docs/adr/` for an existing decision.
+4. Search `src/kit` for an existing reusable capability.
+5. Only then implement new functionality.
+
+Dependency direction is:
+
+```text
+app -> kit
+```
+
+`src/kit` must never import `src/app`. Domain-specific financial behavior belongs in `src/app`. Reusable infrastructure belongs in `src/kit` only when it is useful across unrelated applications. Do not duplicate existing kit capabilities inside the application.
+
+Do not modify an accepted architecture decision implicitly. If a change conflicts with an ADR, update or supersede the ADR explicitly.
+
+### Coding-Agent Decision Tree
+
+```text
+Need functionality?
+       |
+       v
+Does kit already support it?
+       |
+    +--+--+
+   yes    no
+    |      |
+    v      v
+ reuse   Is it financial/domain-specific?
+             |
+          +--+--+
+         yes    no
+          |      |
+          v      v
+         app   candidate for kit
+```
+
+Examples:
+
+- OpenAI model factories, generic retry controllers, generic CRAG evaluation, and Qdrant adapters belong in `kit`.
+- Financial risk thresholds, transaction schemas, FIN-POL interpretation, and freeze-account workflows belong in `app`.
+
+## PII Handling
+
+Customer PII must not be sent directly to model providers, ordinary application logs, or AI tracing systems unless explicitly required by an approved design.
+
+Prefer structured field masking over heuristic free-text detection. Mask data before crossing the model or observability trust boundary. Do not modify authoritative database records merely to create model-safe context.
+
+Do not treat transaction identifiers, amounts, statuses, or risk scores as PII automatically. Classification belongs to the application policy.
+
+Do not bypass existing PII sanitization when adding a new agent, prompt, trace, or logging path. Audit records have separate authorization, retention, and integrity requirements and must not be blindly transformed with the model-facing masking policy.

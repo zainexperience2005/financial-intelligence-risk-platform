@@ -5,6 +5,7 @@ from langchain_core.messages import (
     SystemMessage,
 )
 
+from app.security.pii import prepare_model_text
 from kit.llms import create_chat_model
 from kit.mcp.client import MCPClient
 from kit.mcp.langchain import (
@@ -36,6 +37,6 @@ async def run_mcp_agent(
     return await model_with_tools.ainvoke(
         [
             SystemMessage(content=SYSTEM_PROMPT),
-            HumanMessage(content=question),
+            HumanMessage(content=prepare_model_text(question)),
         ]
     )

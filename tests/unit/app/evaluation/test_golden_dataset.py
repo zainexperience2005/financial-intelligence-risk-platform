@@ -25,6 +25,15 @@ def test_golden_dataset_has_at_least_20_cases():
     assert len(cases) >= 20, f"Expected at least 20 cases, found {len(cases)}"
 
 
+def test_golden_dataset_has_exactly_four_cases_per_category():
+    cases = load_dataset()
+    counts = {category: 0 for category in {case["category"] for case in cases}}
+    for case in cases:
+        counts[case["category"]] += 1
+    assert len(cases) == 24
+    assert set(counts.values()) == {4}
+
+
 def test_case_ids_are_unique():
     cases = load_dataset()
     ids = [c["case_id"] for c in cases]

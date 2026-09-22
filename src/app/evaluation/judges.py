@@ -6,6 +6,9 @@ from typing import Any
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
 
+from app.security.pii import prepare_model_evidence
+from kit.security.pii import mask_free_text
+
 
 class GroundingJudgment(BaseModel):
     """Evaluation result assessing whether a report is strictly grounded in evidence."""
@@ -82,9 +85,11 @@ class GroundingJudge:
 
         # If an LLM is provided, invoke it for semantic analysis
         if self.model is not None:
+            safe_evidence = prepare_model_evidence(evidence)
+            safe_report = mask_free_text(report)
             prompt = (
-                f"VERIFIED EVIDENCE:\n{evidence}\n\n"
-                f"INVESTIGATION REPORT:\n{report}\n\n"
+                f"VERIFIED EVIDENCE:\n{safe_evidence}\n\n"
+                f"INVESTIGATION REPORT:\n{safe_report}\n\n"
                 "Evaluate the report against the verified evidence."
             )
             messages = [

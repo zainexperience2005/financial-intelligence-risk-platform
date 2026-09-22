@@ -4,8 +4,10 @@ import pytest
 from sqlalchemy import select
 
 from app.actions.freeze_account import freeze_account
+from app.audit.events import AuditEventType
 from app.core.exceptions import ActionNotAllowedError
 from app.db.models import Account
+from app.db.repositories.audit import find_by_event_type
 from app.schemas import ProposedAction
 from app.services.actions import ActionService
 from app.services.approvals import approve_action, request_action_approval
@@ -38,13 +40,18 @@ def test_approval_account_substitution_fails(action_service: ActionService):
         )
     assert "Approval does not authorize this account" in str(exc_info.value)
 
-    # 3. Verify target account ACC-9999 was NOT modified
+    # 3. Verify target account ACC-9999 was NOT modified and denial audited
     with SessionFactory() as session:
         acc9999 = session.scalar(
             select(Account).where(Account.account_id == "ACC-9999")
         )
         assert acc9999 is not None
         assert acc9999.status == "active"
+
+        denials = find_by_event_type(session, AuditEventType.ACTION_EXECUTION_DENIED)
+        assert len(denials) >= 1
+        assert denials[-1].details.get("reason_code") == "argument_mismatch"
+
 
 
 def test_direct_freeze_account_rejects_argument_mismatch():
@@ -61,14 +68,20 @@ def test_direct_freeze_account_rejects_argument_mismatch():
         decided_by="compliance@example.com",
     )
 
-    result = freeze_account(
-        account_id="ACC-9999",
-        approval_id=approved.approval_id,
-        actor="attacker@evil.corp",
-    )
+    with pytest.raises(ActionNotAllowedError) as exc_info:
+        freeze_account(
+            account_id="ACC-9999",
+            approval_id=approved.approval_id,
+            actor="attacker@evil.corp",
+        )
 
-    assert result.success is False
-    assert "Approval does not authorize this account" in result.message
+    assert "Approval does not authorize this account" in str(exc_info.value)
+
+    with SessionFactory() as session:
+        denials = find_by_event_type(session, AuditEventType.ACTION_EXECUTION_DENIED)
+        assert len(denials) >= 1
+        assert denials[-1].details.get("reason_code") == "argument_mismatch"
+        assert denials[-1].details.get("action") == "freeze_account"
 
 
 def test_unsupported_action_rejected(action_service: ActionService):

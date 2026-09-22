@@ -1,14 +1,16 @@
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from kit.memory import MemoryRecord, MemorySearchResult, MemoryService
+from app.services.memory import AppMemoryService
+from kit.memory import MemoryRecord, MemorySearchResult
 
 router = APIRouter(
     prefix="/memory",
     tags=["memory"],
 )
 
-memory_service = MemoryService()
+memory_service = AppMemoryService()
+
 
 
 class RememberRequest(BaseModel):
