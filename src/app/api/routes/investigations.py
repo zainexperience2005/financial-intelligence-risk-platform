@@ -11,6 +11,7 @@ business rules, or database mutations live here.
 from fastapi import (
     APIRouter,
     Depends,
+    Request,
 )
 
 from app.api.dependencies import (
@@ -35,10 +36,13 @@ router = APIRouter(
     response_model=InvestigationResponse,
 )
 async def investigate(
-    request: InvestigationRequest,
+    payload: InvestigationRequest,
+    http_request: Request,
     service: InvestigationService = Depends(get_investigation_service),
 ) -> InvestigationResponse:
+    request_id = getattr(http_request.state, "request_id", None)
     return await service.investigate(
-        question=request.question,
-        thread_id=request.thread_id,
+        question=payload.question,
+        thread_id=payload.thread_id,
+        request_id=request_id,
     )

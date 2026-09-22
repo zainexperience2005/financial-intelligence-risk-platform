@@ -19,12 +19,16 @@ class InvestigationService:
         *,
         question: str,
         thread_id: str,
+        request_id: str | None = None,
     ) -> InvestigationResponse:
-        config = {
+        config: dict = {
             "configurable": {
                 "thread_id": thread_id,
             }
         }
+        if request_id:
+            config["metadata"] = {"request_id": request_id}
+            config["tags"] = [f"request:{request_id}"]
 
         result = await self._graph.ainvoke(
             {

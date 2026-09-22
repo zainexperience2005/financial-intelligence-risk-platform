@@ -8,7 +8,7 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791.svg)](https://www.postgresql.org/)
 [![Pydantic](https://img.shields.io/badge/Pydantic-v2-E92063.svg)](https://docs.pydantic.dev/)
 [![Code Style: Ruff](https://img.shields.io/badge/Code%20Style-Ruff-000000.svg)](https://github.com/astral-sh/ruff)
-[![Tests](https://img.shields.io/badge/tests-161%20passed-brightgreen.svg)](#-testing--verification)
+[![Tests](https://img.shields.io/badge/tests-168%20passed-brightgreen.svg)](#-testing--verification)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg)](./Dockerfile)
 
 An enterprise-grade, production-oriented **Agentic AI platform for financial intelligence, fraud investigation, and controlled risk mitigation**.
@@ -367,6 +367,44 @@ Deterministic Scorers  Grounding Scorers  Safety Invariants
 
 ---
 
+## 🔭 LangSmith Evaluation & Observability (Step 38)
+
+The platform integrates **LangSmith** as the tracing and evaluation platform while keeping domain code strictly decoupled behind the `kit/observability` abstraction:
+
+```text
+HTTP Request (X-Request-ID: abc123)
+               │
+               ▼
+     InvestigationService
+               │
+               ▼
+     LangGraph StateGraph
+     ├── financial_planner (LLM span)
+     ├── sql_analyst (LLM + AST SafeSQL span)
+     ├── policy_agent (CRAG relevance & rewrite span)
+     ├── risk_agent (Deterministic risk engine span)
+     └── report_agent (Synthesis span)
+               │
+               ▼
+     LangSmith Distributed Trace
+     (request_id=abc123, thread_id=eval-001, tags, latency, tokens, cost)
+```
+
+### Key Architectural Invariants
+1. **Three Separate Observability Tiers**:
+   - **Application Logs**: Operational debugging and HTTP error tracking.
+   - **LangSmith**: Multi-agent spans, tool calls, token usage, latency, and experiments.
+   - **PostgreSQL Audit Log**: Immutable forensic record for customer-impacting mutations and approvals (**LangSmith does NOT replace the database audit trail**).
+2. **Trace Correlation**: HTTP `X-Request-ID` is passed through middleware, service layers, and LangGraph config metadata for end-to-end trace correlation.
+3. **Strict Credential Sanitization**: `sanitize_metadata` automatically redacts sensitive keys (`api_key`, `token`, `password`, `database_url`) to prevent leaking secrets or unnecessary PII into external trace platforms.
+4. **Semantic Grounding Judge (`GroundingJudge`)**:
+   - Programmatically enforces that high deterministic risk scores are **never** reported as proof of fraud.
+   - Enforces that recommendations are **never** reported as executed account freezes without verified action execution.
+   - Evaluates material claim entailment against verified specialist evidence.
+5. **Continuous Dataset Synchronization**: `python scripts/sync_langsmith_dataset.py` syncs the version-controlled `financial_golden.json` into LangSmith dataset `financial-intelligence-golden-v1`.
+
+---
+
 ## 🚀 Production Backend Architecture
 
 The FastAPI application follows a clean layered structure:
@@ -706,7 +744,7 @@ pytest tests/integration/app/actions/ -m postgres -v
 python scripts/smoke_test.py
 ```
 
-### Test Coverage Areas (161 Unit Tests)
+### Test Coverage Areas (168 Unit Tests)
 
 | Area | Tests | Notes |
 |---|---|---|
@@ -730,6 +768,8 @@ python scripts/smoke_test.py
 | **Context Builder** | 4 | Priority selection, token estimation, overflow guard, headroom reserve |
 | **SQL Model Context Service** | 2 | Row slicing and truncation metadata |
 | **Golden Evaluation & Scorers** | 9 | Dataset schema, 24-case coverage, unique IDs, exact/numeric/source/grounding scorers |
+| **Semantic Grounding Judge** | 4 | Invariant enforcement (fraud, freeze), evidence entailment, structured model mock |
+| **Kit Observability & Tracing** | 3 | Credential redaction, config conversion, offline experiment runner |
 | **Kit LLMs** | 4 | Config defaults, provider mapping |
 | **Kit RAG** | 10 | Chunking, metadata, retrieval |
 | **Data Analysis Tools** | 16 | Analytics schema, aggregation, group sum, counts |
@@ -739,7 +779,7 @@ python scripts/smoke_test.py
 | **Financial Graph** | 2 | End-to-end multi-agent investigation graph |
 | **Short-Term Memory** | 1 | Turn-scoped state isolation |
 | **Dependencies & Setup** | 3 | Graph dependencies and memory app service |
-| **Total** | **161** | **100% offline, deterministic, zero external API dependencies** |
+| **Total** | **168** | **100% offline, deterministic, zero external API dependencies** |
 
 ---
 

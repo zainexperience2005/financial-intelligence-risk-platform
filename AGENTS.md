@@ -841,3 +841,37 @@ when the evaluated path calls an LLM.
 
 The synthetic risk rules and policies in the evaluation
 dataset are project fixtures, not universal banking rules.
+
+
+## Observability
+
+AI workflows should expose traceable component boundaries.
+
+LangSmith is the current tracing and evaluation backend,
+but domain code must not depend directly on it.
+
+Request IDs should correlate API logs and AI traces.
+
+Thread IDs identify conversation continuity and must not be
+confused with request IDs.
+
+Trace metadata must not contain credentials or unnecessary
+PII.
+
+The PostgreSQL audit trail remains authoritative for
+approval and controlled-action events.
+
+Golden datasets remain version-controlled in the
+repository even when synchronized to an external
+evaluation platform.
+
+Deterministic properties use deterministic evaluators.
+
+LLM judges are reserved for semantic properties that
+cannot be reliably evaluated programmatically.
+
+LLM judges must themselves be validated against known
+positive and negative examples.
+
+Experiments should record dataset, model, prompt/ruleset
+version, and source revision where practical.
