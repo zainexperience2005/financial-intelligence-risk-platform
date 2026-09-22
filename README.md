@@ -8,7 +8,7 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791.svg)](https://www.postgresql.org/)
 [![Pydantic](https://img.shields.io/badge/Pydantic-v2-E92063.svg)](https://docs.pydantic.dev/)
 [![Code Style: Ruff](https://img.shields.io/badge/Code%20Style-Ruff-000000.svg)](https://github.com/astral-sh/ruff)
-[![Tests](https://img.shields.io/badge/tests-152%20passed-brightgreen.svg)](#-testing--verification)
+[![Tests](https://img.shields.io/badge/tests-161%20passed-brightgreen.svg)](#-testing--verification)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg)](./Dockerfile)
 
 An enterprise-grade, production-oriented **Agentic AI platform for financial intelligence, fraud investigation, and controlled risk mitigation**.
@@ -329,6 +329,41 @@ To move beyond unconstrained `while True:` agent loops, the platform includes a 
 - **Priority-Based Selection**: Fills available headroom with highest-priority items first and drops lower-priority items when capacity is reached.
 - **Fail-Loud Required Context**: If essential system instructions or user requests exceed capacity, raises `ContextBudgetExceededError` (`StopReason.CONTEXT_BUDGET`) rather than silently discarding required facts.
 - **SQL Context Bounding**: Slices raw SQL results to `MAX_MODEL_SQL_ROWS = 50` with explicit truncation metadata for model visibility, while deterministic analytics process the un-truncated dataset.
+
+---
+
+## 🎯 Formal Evaluation Foundation (Step 37)
+
+To ensure the AI system performs reliably against known ground truth, the platform features a formal, repeatable evaluation suite:
+
+```text
+Golden Dataset (evals/datasets/financial_golden.json)
+                         │
+                         ▼
+             Component / Workflow Runner
+                         │
+         ┌───────────────┼───────────────┐
+         ▼               ▼               ▼
+Deterministic Scorers  Grounding Scorers  Safety Invariants
+ (exact/numeric match)   (source recall)   (hard gates)
+         │               │               │
+         └───────────────┼───────────────┘
+                         ▼
+        Evaluation Report (evals/reports/)
+```
+
+### Golden Dataset Coverage (24 Cases)
+- **SQL Investigation (5)**: Single-row lookup, status filtering, customer history, threshold search, conversational bypass.
+- **Deterministic Analytics (4)**: Account summarization, grouped sums, categorical breakdowns, empty dataset handling.
+- **Policy RAG / CRAG (5)**: High-value review thresholds, international rules, failure procedures, human approval requirements.
+- **Deterministic Risk (4)**: High-value domestic/international transfers, multi-signal scoring, completed low-risk activity.
+- **Unsupported Inquiries (3)**: Out-of-domain queries (crypto, loyalty points) and non-existent database records.
+- **Action & Approval Safety (3)**: Pending approval rejection, exact argument verification, single-use replay prevention.
+
+### Core Scoring Principles
+1. **Deterministic Properties Use Deterministic Scorers**: Numbers and flags are scored via exact programmatic matching (`exact_match`, `numeric_match`) — never by asking an LLM.
+2. **Safety Invariants as Hard Gates**: A single approval bypass or unauthorized mutation is treated as a failed safety gate rather than an acceptable percentage point loss.
+3. **Layered Evaluation**: Component evaluations run independently to isolate regressions before evaluating multi-agent workflows.
 
 ---
 
@@ -671,7 +706,7 @@ pytest tests/integration/app/actions/ -m postgres -v
 python scripts/smoke_test.py
 ```
 
-### Test Coverage Areas (152 Unit Tests)
+### Test Coverage Areas (161 Unit Tests)
 
 | Area | Tests | Notes |
 |---|---|---|
@@ -694,6 +729,7 @@ python scripts/smoke_test.py
 | **LLM Usage & Pricing** | 5 | Token extraction, cached cost, pricing registry, unknown cost |
 | **Context Builder** | 4 | Priority selection, token estimation, overflow guard, headroom reserve |
 | **SQL Model Context Service** | 2 | Row slicing and truncation metadata |
+| **Golden Evaluation & Scorers** | 9 | Dataset schema, 24-case coverage, unique IDs, exact/numeric/source/grounding scorers |
 | **Kit LLMs** | 4 | Config defaults, provider mapping |
 | **Kit RAG** | 10 | Chunking, metadata, retrieval |
 | **Data Analysis Tools** | 16 | Analytics schema, aggregation, group sum, counts |
@@ -703,7 +739,7 @@ python scripts/smoke_test.py
 | **Financial Graph** | 2 | End-to-end multi-agent investigation graph |
 | **Short-Term Memory** | 1 | Turn-scoped state isolation |
 | **Dependencies & Setup** | 3 | Graph dependencies and memory app service |
-| **Total** | **152** | **100% offline, deterministic, zero external API dependencies** |
+| **Total** | **161** | **100% offline, deterministic, zero external API dependencies** |
 
 ---
 

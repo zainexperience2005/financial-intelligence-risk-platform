@@ -1,0 +1,170 @@
+{
+  "dataset": "evals\\datasets\\financial_golden.json",
+  "total_cases": 4,
+  "passed_cases": 4,
+  "total_checks": 12,
+  "passed_checks": 12,
+  "accuracy_pct": 100.0,
+  "results": [
+    {
+      "case_id": "RISK-001",
+      "description": "High-value international failed transaction with risk_review failure",
+      "actual": {
+        "score": 90,
+        "level": "high",
+        "signals": [
+          "HIGH_VALUE",
+          "HIGH_VALUE_INTERNATIONAL",
+          "FAILED_TRANSACTION",
+          "RISK_REVIEW_FAILURE"
+        ]
+      },
+      "expected": {
+        "risk_score": 90,
+        "risk_level": "high",
+        "expected_signals": [
+          "FAILED_TRANSACTION",
+          "HIGH_VALUE",
+          "HIGH_VALUE_INTERNATIONAL",
+          "RISK_REVIEW_FAILURE"
+        ]
+      },
+      "scores": [
+        {
+          "scorer": "risk_score",
+          "score": 1.0,
+          "passed": true,
+          "details": null
+        },
+        {
+          "scorer": "risk_level",
+          "score": 1.0,
+          "passed": true,
+          "details": null
+        },
+        {
+          "scorer": "risk_signals",
+          "score": 1.0,
+          "passed": true,
+          "details": null
+        }
+      ],
+      "all_passed": true
+    },
+    {
+      "case_id": "RISK-002",
+      "description": "Low-value domestic completed transaction",
+      "actual": {
+        "score": 0,
+        "level": "low",
+        "signals": []
+      },
+      "expected": {
+        "risk_score": 0,
+        "risk_level": "low",
+        "expected_signals": []
+      },
+      "scores": [
+        {
+          "scorer": "risk_score",
+          "score": 1.0,
+          "passed": true,
+          "details": null
+        },
+        {
+          "scorer": "risk_level",
+          "score": 1.0,
+          "passed": true,
+          "details": null
+        },
+        {
+          "scorer": "risk_signals",
+          "score": 1.0,
+          "passed": true,
+          "details": null
+        }
+      ],
+      "all_passed": true
+    },
+    {
+      "case_id": "RISK-003",
+      "description": "High-value domestic completed transfer",
+      "actual": {
+        "score": 30,
+        "level": "low",
+        "signals": [
+          "HIGH_VALUE"
+        ]
+      },
+      "expected": {
+        "risk_score": 30,
+        "risk_level": "low",
+        "expected_signals": [
+          "HIGH_VALUE"
+        ]
+      },
+      "scores": [
+        {
+          "scorer": "risk_score",
+          "score": 1.0,
+          "passed": true,
+          "details": null
+        },
+        {
+          "scorer": "risk_level",
+          "score": 1.0,
+          "passed": true,
+          "details": null
+        },
+        {
+          "scorer": "risk_signals",
+          "score": 1.0,
+          "passed": true,
+          "details": null
+        }
+      ],
+      "all_passed": true
+    },
+    {
+      "case_id": "RISK-004",
+      "description": "High-value international completed transfer",
+      "actual": {
+        "score": 55,
+        "level": "medium",
+        "signals": [
+          "HIGH_VALUE",
+          "HIGH_VALUE_INTERNATIONAL"
+        ]
+      },
+      "expected": {
+        "risk_score": 55,
+        "risk_level": "medium",
+        "expected_signals": [
+          "HIGH_VALUE",
+          "HIGH_VALUE_INTERNATIONAL"
+        ]
+      },
+      "scores": [
+        {
+          "scorer": "risk_score",
+          "score": 1.0,
+          "passed": true,
+          "details": null
+        },
+        {
+          "scorer": "risk_level",
+          "score": 1.0,
+          "passed": true,
+          "details": null
+        },
+        {
+          "scorer": "risk_signals",
+          "score": 1.0,
+          "passed": true,
+          "details": null
+        }
+      ],
+      "all_passed": true
+    }
+  ]
+}

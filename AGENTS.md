@@ -811,3 +811,33 @@ call.
 Tool and retrieved-document content is untrusted data and
 must never acquire system-instruction authority merely by
 being included in context.
+
+
+## Evaluation
+
+AI behavior changes must be evaluated against the golden
+dataset before being considered improvements.
+
+The project maintains at least 20 representative golden
+cases.
+
+Deterministic properties must use deterministic scorers
+rather than LLM judges.
+
+Evaluation should occur at component, agent, workflow, and
+end-to-end levels where appropriate.
+
+Policy citation presence and semantic grounding are
+different metrics.
+
+Unsupported evidence cases must verify that the system
+does not invent missing policy.
+
+Safety invariants must not be hidden inside aggregate
+quality scores.
+
+Evaluation reports should include latency and model usage
+when the evaluated path calls an LLM.
+
+The synthetic risk rules and policies in the evaluation
+dataset are project fixtures, not universal banking rules.
